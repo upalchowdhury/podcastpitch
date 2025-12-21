@@ -145,7 +145,7 @@ jobs:
             --cpu 1 \
             --min-instances 0 \
             --max-instances 10 \
-            --set-env-vars "ENV=${{ env.ENVIRONMENT }}" \
+            --set-env-vars "ENV=${{ env.ENVIRONMENT }},GCP_PROJECT_ID=${{ env.GCP_PROJECT_ID }}" \
             --set-secrets "DATABASE_URL=podcast-pitch-db-url-${{ env.ENVIRONMENT }}:latest" \
             --set-secrets "JWT_SECRET=podcast-pitch-jwt-secret-${{ env.ENVIRONMENT }}:latest" \
             --set-secrets "GEMINI_API_KEY=podcast-pitch-gemini-key:latest" \
