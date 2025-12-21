@@ -1,0 +1,19 @@
+{
+  "name": "podcast-pitch-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Podcast Pitch Platform - Generate and send personalized podcast guest pitches at scale",
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "build": "pnpm -r run build",
+    "lint": "pnpm -r run lint",
+    "test": "pnpm -r run test",
+    "clean": "pnpm -r run clean",
+    "typecheck": "pnpm -r run typecheck"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0"
+}
