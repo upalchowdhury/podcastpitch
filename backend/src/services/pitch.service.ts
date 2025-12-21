@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { eq, and, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { pitches, podcasts, userProfiles } from '../db/schema.js';
@@ -12,9 +12,7 @@ import type {
     UpdatePitchInput
 } from '@podcast-pitch/shared';
 
-const openai = new OpenAI({
-    apiKey: config.ai.openaiApiKey,
-});
+const genAI = new GoogleGenerativeAI(config.ai.geminiApiKey);
 
 export class PitchService {
     static async generate(
@@ -263,20 +261,24 @@ Respond in JSON format:
 }`;
 
         try {
-            const response = await openai.chat.completions.create({
-                model: config.ai.openaiModel || AI_CONFIG.defaultModel,
-                messages: [{ role: 'user', content: prompt }],
-                max_tokens: AI_CONFIG.maxTokens,
-                temperature: AI_CONFIG.temperature,
-                response_format: { type: 'json_object' },
-            });
+            const model = genAI.getGenerativeModel({ model: config.ai.geminiModel || 'gemini-1.5-flash' });
 
-            const content = response.choices[0]?.message?.content;
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const content = response.text();
+
             if (!content) {
                 throw new Error('No response from AI');
             }
 
-            const parsed = JSON.parse(content) as { subject: string; body: string };
+            // Extract JSON from response (Gemini may wrap it in markdown code blocks)
+            let jsonStr = content;
+            const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+            if (jsonMatch) {
+                jsonStr = jsonMatch[1];
+            }
+
+            const parsed = JSON.parse(jsonStr.trim()) as { subject: string; body: string };
 
             return {
                 subject: parsed.subject,
