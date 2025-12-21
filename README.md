@@ -80,6 +80,69 @@ The application is deployed via GitHub Actions to GCP Cloud Run. See [docs/deplo
 ./scripts/deploy.sh [dev|staging|prod]
 ```
 
+
+
+##cloudshell commands 
+# Set project
+PROJECT_ID="abstract-hydra-477523-q7"
+gcloud config set project $PROJECT_ID
+
+# 1. Create Service Account
+gcloud iam service-accounts create github-deployer \
+  --display-name="GitHub Actions Deployer"
+
+# 2. Grant IAM Roles
+SA_EMAIL="github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"
+for role in roles/run.admin roles/iam.serviceAccountUser roles/artifactregistry.writer roles/secretmanager.secretAccessor; do
+  gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SA_EMAIL" --role="$role"
+done
+
+# 3. Create Workload Identity Pool & Provider
+PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
+gcloud iam workload-identity-pools create github-pool --location=global --display-name="GitHub Pool"
+gcloud iam workload-identity-pools providers create-oidc github-provider \
+  --location=global --workload-identity-pool=github-pool \
+  --display-name="GitHub Provider" \
+  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository" \
+  --issuer-uri="https://token.actions.githubusercontent.com"
+
+# 4. Allow GitHub repo to use service account
+gcloud iam service-accounts add-iam-policy-binding $SA_EMAIL \
+  --role="roles/iam.workloadIdentityUser" \
+  --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/github-pool/attribute.repository/upalchowdhury/podcastpitch"
+
+# 5. Create VPC Connector
+gcloud compute networks vpc-access connectors create podcast-pitch-connector \
+  --region=us-central1 --range=10.8.0.0/28
+
+# 6. Create Secrets
+echo -n "postgresql://postgres:podcastpitch@/podcastpitch?host=/cloudsql/${PROJECT_ID}:us-central1:podcastpitch" | \
+  gcloud secrets create podcast-pitch-db-url-prod --data-file=-
+echo -n "GENERATE_A_SECURE_JWT_SECRET_HERE" | gcloud secrets create podcast-pitch-jwt-secret-prod --data-file=-
+
+# 7. Print values for GitHub Secrets
+echo "===== ADD THESE TO GITHUB SECRETS ====="
+echo "GCP_PROJECT_ID: $PROJECT_ID"
+echo "GCP_SERVICE_ACCOUNT: $SA_EMAIL"
+echo "GCP_WORKLOAD_IDENTITY_PROVIDER: projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+
+---------FIX-----------
+PROJECT_ID="abstract-hydra-477523-q7"
+PROJECT_NUMBER="906706486339"
+
+gcloud iam workload-identity-pools providers create-oidc github-provider \
+  --location=global \
+  --workload-identity-pool=github-pool \
+  --display-name="GitHub Provider" \
+  --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
+  --attribute-condition="assertion.repository_owner=='upalchowdhury'" \
+  --issuer-uri="https://token.actions.githubusercontent.com"
+
+
+
+
+
+
 ## License
 
 Proprietary - All rights reserved
