@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -24,7 +24,7 @@ import trackingRoutes from '../routes/tracking.routes.js';
 // Validate config
 validateConfig();
 
-const app = express();
+const app: Express = express();
 
 // Trust proxy for Cloud Run
 app.set('trust proxy', true);

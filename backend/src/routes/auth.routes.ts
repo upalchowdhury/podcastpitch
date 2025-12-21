@@ -4,7 +4,7 @@ import { validateBody } from '../middleware/validate.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { loginSchema, registerSchema, googleAuthSchema } from '@podcast-pitch/shared';
 
-const router = Router();
+const router: ReturnType<typeof Router> = Router();
 
 // POST /api/auth/register
 router.post('/register', validateBody(registerSchema), async (req, res, next) => {

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { DashboardService } from '../services/dashboard.service.js';
 import { authMiddleware } from '../middleware/auth.js';
 
-const router = Router();
+const router: ReturnType<typeof Router> = Router();
 
 // All routes require authentication
 router.use(authMiddleware);

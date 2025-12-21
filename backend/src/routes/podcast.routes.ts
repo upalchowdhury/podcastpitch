@@ -4,7 +4,7 @@ import { validateQuery, validateParams } from '../middleware/validate.js';
 import { optionalAuthMiddleware } from '../middleware/auth.js';
 import { podcastSearchSchema, idParamSchema } from '@podcast-pitch/shared';
 
-const router = Router();
+const router: ReturnType<typeof Router> = Router();
 
 // GET /api/podcasts/search
 router.get(

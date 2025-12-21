@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { TrackingService } from '../services/tracking.service.js';
 
-const router = Router();
+const router: ReturnType<typeof Router> = Router();
 
 // GET /t/open - Tracking pixel endpoint
 router.get('/open', async (req, res) => {

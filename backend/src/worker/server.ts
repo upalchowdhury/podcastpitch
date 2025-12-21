@@ -1,10 +1,10 @@
-import express from 'express';
+import express, { Express } from 'express';
 import { config } from '../config/index.js';
 import { logger } from '../utils/logger.js';
 import { SendingService } from '../services/sending.service.js';
 import { checkDatabaseConnection } from '../db/index.js';
 
-const app = express();
+const app: Express = express();
 
 // Body parsing
 app.use(express.json());

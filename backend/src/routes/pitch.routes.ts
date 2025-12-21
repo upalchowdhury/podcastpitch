@@ -9,7 +9,7 @@ import {
     idParamSchema
 } from '@podcast-pitch/shared';
 
-const router = Router();
+const router: ReturnType<typeof Router> = Router();
 
 // All routes require authentication
 router.use(authMiddleware);

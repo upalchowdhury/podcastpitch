@@ -4,7 +4,7 @@ import { authMiddleware } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validate.js';
 import { updateProfileSchema } from '@podcast-pitch/shared';
 
-const router = Router();
+const router: ReturnType<typeof Router> = Router();
 
 // All routes require authentication
 router.use(authMiddleware);
