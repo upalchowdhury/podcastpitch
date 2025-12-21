@@ -111,21 +111,21 @@ jobs:
 
       - name: Build and push API image
         run: |
-          IMAGE_TAG="${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/podcast-pitch/api:${{ github.sha }}"
+          IMAGE_TAG="${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/podcastpitch/api:${{ github.sha }}"
           docker build -f backend/Dockerfile -t $IMAGE_TAG .
           docker push $IMAGE_TAG
           echo "API_IMAGE=$IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Build and push Worker image
         run: |
-          IMAGE_TAG="${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/podcast-pitch/worker:${{ github.sha }}"
+          IMAGE_TAG="${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/podcastpitch/worker:${{ github.sha }}"
           docker build -f backend/Dockerfile.worker -t $IMAGE_TAG .
           docker push $IMAGE_TAG
           echo "WORKER_IMAGE=$IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Build and push Frontend image
         run: |
-          IMAGE_TAG="${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/podcast-pitch/frontend:${{ github.sha }}"
+          IMAGE_TAG="${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/podcastpitch/frontend:${{ github.sha }}"
           docker build -f frontend/Dockerfile -t $IMAGE_TAG \
             --build-arg NEXT_PUBLIC_API_URL=https://api${{ env.SERVICE_SUFFIX }}.podcastpitch.com \
             .
