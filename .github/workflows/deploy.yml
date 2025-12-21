@@ -148,7 +148,7 @@ jobs:
             --set-env-vars "ENV=${{ env.ENVIRONMENT }}" \
             --set-secrets "DATABASE_URL=podcast-pitch-db-url-${{ env.ENVIRONMENT }}:latest" \
             --set-secrets "JWT_SECRET=podcast-pitch-jwt-secret-${{ env.ENVIRONMENT }}:latest" \
-            --set-secrets "OPENAI_API_KEY=podcast-pitch-openai-key:latest" \
+            --set-secrets "GEMINI_API_KEY=podcast-pitch-gemini-key:latest" \
             --vpc-connector podcast-pitch-connector \
             --vpc-egress private-ranges-only
 
