@@ -150,7 +150,7 @@ export class EmailAccountService {
             .update(emailAccounts)
             .set({
                 healthStatus,
-                healthDetails: healthCheck as Record<string, unknown>,
+                healthDetails: healthCheck as unknown as Record<string, unknown>,
                 updatedAt: new Date(),
             })
             .where(eq(emailAccounts.id, accountId));
