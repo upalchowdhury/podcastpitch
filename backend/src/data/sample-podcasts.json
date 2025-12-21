@@ -1,0 +1,812 @@
+[
+    {
+        "externalSource": "sample",
+        "externalId": "tech-001",
+        "title": "The Tech Weekly",
+        "description": "Your weekly dose of technology news, reviews, and analysis. We cover everything from smartphones to AI, cloud computing to cybersecurity.",
+        "categories": [
+            "Technology",
+            "News"
+        ],
+        "language": "en",
+        "hostName": "Sarah Chen",
+        "contactEmail": "bookings@thetechweekly.com",
+        "rssUrl": "https://feeds.simplecast.com/tech-weekly",
+        "websiteUrl": "https://thetechweekly.com",
+        "audienceSizeEstimate": 250000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "tech-002",
+        "title": "AI Frontiers",
+        "description": "Deep dives into artificial intelligence, machine learning, and the future of automation. Interviews with leading researchers and industry experts.",
+        "categories": [
+            "Technology",
+            "Science",
+            "AI"
+        ],
+        "language": "en",
+        "hostName": "Dr. James Wilson",
+        "contactEmail": "guests@aifrontiers.io",
+        "rssUrl": "https://anchor.fm/s/aifrontiers/podcast/rss",
+        "websiteUrl": "https://aifrontiers.io",
+        "audienceSizeEstimate": 180000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "biz-001",
+        "title": "Startup Stories",
+        "description": "Founders share their journeys - the failures, the pivots, and the breakthroughs. Real stories from the trenches of entrepreneurship.",
+        "categories": [
+            "Business",
+            "Entrepreneurship"
+        ],
+        "language": "en",
+        "hostName": "Mike Rodriguez",
+        "contactEmail": "pitch@startupstories.fm",
+        "rssUrl": "https://feeds.buzzsprout.com/startupstories.rss",
+        "websiteUrl": "https://startupstories.fm",
+        "audienceSizeEstimate": 320000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "biz-002",
+        "title": "The Money Mindset",
+        "description": "Personal finance made simple. Learn about investing, saving, budgeting, and building wealth from experts and everyday success stories.",
+        "categories": [
+            "Business",
+            "Finance",
+            "Education"
+        ],
+        "language": "en",
+        "hostName": "Jennifer Park",
+        "contactEmail": "hello@moneymindset.show",
+        "rssUrl": "https://feeds.megaphone.fm/money-mindset",
+        "websiteUrl": "https://moneymindset.show",
+        "audienceSizeEstimate": 450000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "health-001",
+        "title": "Wellness Revolution",
+        "description": "Transform your health with evidence-based advice on nutrition, fitness, mental health, and longevity. New episodes every Monday.",
+        "categories": [
+            "Health & Fitness",
+            "Self-Improvement"
+        ],
+        "language": "en",
+        "hostName": "Dr. Amanda Foster",
+        "contactEmail": "guests@wellnessrevolution.com",
+        "rssUrl": "https://feeds.libsyn.com/wellness-revolution",
+        "websiteUrl": "https://wellnessrevolution.com",
+        "audienceSizeEstimate": 280000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "health-002",
+        "title": "Mind Matters",
+        "description": "A mental health podcast exploring anxiety, depression, relationships, and personal growth. Conversations that help you understand yourself better.",
+        "categories": [
+            "Health & Fitness",
+            "Mental Health",
+            "Society & Culture"
+        ],
+        "language": "en",
+        "hostName": "Rachel Kim",
+        "contactEmail": "booking@mindmatters.fm",
+        "rssUrl": "https://anchor.fm/s/mindmatters/podcast/rss",
+        "websiteUrl": "https://mindmatters.fm",
+        "audienceSizeEstimate": 210000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "comedy-001",
+        "title": "Laugh Track",
+        "description": "Weekly comedy interviews and improv with the funniest people in the business. Behind-the-scenes stories from stand-up, TV, and film.",
+        "categories": [
+            "Comedy",
+            "Entertainment"
+        ],
+        "language": "en",
+        "hostName": "Dave Martinez",
+        "contactEmail": "bookings@laughtrack.show",
+        "rssUrl": "https://feeds.simplecast.com/laugh-track",
+        "websiteUrl": "https://laughtrack.show",
+        "audienceSizeEstimate": 520000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "science-001",
+        "title": "Curious Minds",
+        "description": "Exploring the wonders of science, from quantum physics to marine biology. Making complex topics accessible and fascinating for everyone.",
+        "categories": [
+            "Science",
+            "Education"
+        ],
+        "language": "en",
+        "hostName": "Prof. Elena Vasquez",
+        "contactEmail": "guests@curiousminds.science",
+        "rssUrl": "https://feeds.npr.org/curious-minds",
+        "websiteUrl": "https://curiousminds.science",
+        "audienceSizeEstimate": 380000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "marketing-001",
+        "title": "Growth Hackers",
+        "description": "Marketing strategies that actually work. Learn SEO, content marketing, social media, and paid advertising from practitioners who've scaled companies.",
+        "categories": [
+            "Business",
+            "Marketing",
+            "Technology"
+        ],
+        "language": "en",
+        "hostName": "Tom Anderson",
+        "contactEmail": "podcast@growthhackers.fm",
+        "rssUrl": "https://feeds.buzzsprout.com/growthhackers.rss",
+        "websiteUrl": "https://growthhackers.fm",
+        "audienceSizeEstimate": 195000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "crypto-001",
+        "title": "Blockchain Breakdown",
+        "description": "Demystifying cryptocurrency, DeFi, and Web3. Weekly analysis of market trends and interviews with builders in the space.",
+        "categories": [
+            "Technology",
+            "Business",
+            "Cryptocurrency"
+        ],
+        "language": "en",
+        "hostName": "Alex Thompson",
+        "contactEmail": "guests@blockchainbreakdown.io",
+        "rssUrl": "https://anchor.fm/s/blockchain-breakdown/podcast/rss",
+        "websiteUrl": "https://blockchainbreakdown.io",
+        "audienceSizeEstimate": 145000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "design-001",
+        "title": "Design Matters",
+        "description": "Conversations with designers, artists, and creative thinkers. Exploring the intersection of design, culture, and business.",
+        "categories": [
+            "Arts",
+            "Design",
+            "Business"
+        ],
+        "language": "en",
+        "hostName": "Debbie Millman",
+        "contactEmail": "guests@designmatters.fm",
+        "rssUrl": "https://feeds.feedburner.com/designmatters",
+        "websiteUrl": "https://designmatters.fm",
+        "audienceSizeEstimate": 290000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "productivity-001",
+        "title": "Deep Work Daily",
+        "description": "Master focus, eliminate distractions, and accomplish meaningful work. Practical tips for knowledge workers and creators.",
+        "categories": [
+            "Business",
+            "Self-Improvement",
+            "Education"
+        ],
+        "language": "en",
+        "hostName": "Chris Bailey",
+        "contactEmail": "pitch@deepworkdaily.com",
+        "rssUrl": "https://feeds.megaphone.fm/deep-work-daily",
+        "websiteUrl": "https://deepworkdaily.com",
+        "audienceSizeEstimate": 175000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "leadership-001",
+        "title": "The Leadership Lab",
+        "description": "Insights from CEOs, executives, and thought leaders on building great teams, company culture, and effective leadership.",
+        "categories": [
+            "Business",
+            "Management",
+            "Careers"
+        ],
+        "language": "en",
+        "hostName": "Marcus Johnson",
+        "contactEmail": "booking@leadershiplab.co",
+        "rssUrl": "https://feeds.libsyn.com/leadership-lab",
+        "websiteUrl": "https://leadershiplab.co",
+        "audienceSizeEstimate": 230000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "history-001",
+        "title": "Time Travelers",
+        "description": "Journey through history's most fascinating events, people, and mysteries. Bringing the past to life with storytelling and expert interviews.",
+        "categories": [
+            "History",
+            "Education",
+            "Society & Culture"
+        ],
+        "language": "en",
+        "hostName": "Dr. Patricia Moore",
+        "contactEmail": "guests@timetravelers.fm",
+        "rssUrl": "https://feeds.simplecast.com/time-travelers",
+        "websiteUrl": "https://timetravelers.fm",
+        "audienceSizeEstimate": 420000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "parenting-001",
+        "title": "Modern Parents",
+        "description": "Navigating parenthood in the digital age. Evidence-based parenting advice, real talk, and community support.",
+        "categories": [
+            "Kids & Family",
+            "Health & Fitness",
+            "Education"
+        ],
+        "language": "en",
+        "hostName": "Lisa Chang",
+        "contactEmail": "hello@modernparents.show",
+        "rssUrl": "https://anchor.fm/s/modern-parents/podcast/rss",
+        "websiteUrl": "https://modernparents.show",
+        "audienceSizeEstimate": 165000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "sports-001",
+        "title": "Game Changers",
+        "description": "Interviews with athletes, coaches, and sports industry insiders. Stories of perseverance, victory, and what it takes to be elite.",
+        "categories": [
+            "Sports",
+            "Society & Culture"
+        ],
+        "language": "en",
+        "hostName": "Jordan Blake",
+        "contactEmail": "bookings@gamechangers.fm",
+        "rssUrl": "https://feeds.buzzsprout.com/gamechangers.rss",
+        "websiteUrl": "https://gamechangers.fm",
+        "audienceSizeEstimate": 340000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "writing-001",
+        "title": "The Writer's Room",
+        "description": "For aspiring and established writers. Craft discussions, publishing insights, and conversations with bestselling authors.",
+        "categories": [
+            "Arts",
+            "Books",
+            "Education"
+        ],
+        "language": "en",
+        "hostName": "Emily Winters",
+        "contactEmail": "guests@writersroom.fm",
+        "rssUrl": "https://feeds.libsyn.com/writers-room",
+        "websiteUrl": "https://writersroom.fm",
+        "audienceSizeEstimate": 125000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "sustainability-001",
+        "title": "Green Future",
+        "description": "Climate solutions, sustainable living, and environmental innovation. Hopeful stories and practical actions for a better planet.",
+        "categories": [
+            "Science",
+            "Society & Culture",
+            "News"
+        ],
+        "language": "en",
+        "hostName": "Maya Green",
+        "contactEmail": "pitch@greenfuture.earth",
+        "rssUrl": "https://feeds.megaphone.fm/green-future",
+        "websiteUrl": "https://greenfuture.earth",
+        "audienceSizeEstimate": 155000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "music-001",
+        "title": "Sound Stories",
+        "description": "Behind the music with artists, producers, and industry legends. The stories behind your favorite songs and albums.",
+        "categories": [
+            "Music",
+            "Arts",
+            "Entertainment"
+        ],
+        "language": "en",
+        "hostName": "Carlos Rivera",
+        "contactEmail": "booking@soundstories.fm",
+        "rssUrl": "https://anchor.fm/s/sound-stories/podcast/rss",
+        "websiteUrl": "https://soundstories.fm",
+        "audienceSizeEstimate": 275000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "remote-001",
+        "title": "Remote Work Revolution",
+        "description": "Building successful remote teams and distributed companies. Tips, tools, and strategies for the future of work.",
+        "categories": [
+            "Business",
+            "Technology",
+            "Careers"
+        ],
+        "language": "en",
+        "hostName": "Sarah Mitchell",
+        "contactEmail": "guests@remoteworkrev.com",
+        "rssUrl": "https://feeds.simplecast.com/remote-work-revolution",
+        "websiteUrl": "https://remoteworkrev.com",
+        "audienceSizeEstimate": 185000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "data-001",
+        "title": "Data Driven",
+        "description": "Analytics, data science, and business intelligence. How companies use data to make better decisions and build products.",
+        "categories": [
+            "Technology",
+            "Business",
+            "Science"
+        ],
+        "language": "en",
+        "hostName": "Dr. Kevin Liu",
+        "contactEmail": "podcast@datadriven.io",
+        "rssUrl": "https://feeds.buzzsprout.com/datadriven.rss",
+        "websiteUrl": "https://datadriven.io",
+        "audienceSizeEstimate": 140000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "food-001",
+        "title": "Culinary Conversations",
+        "description": "Chefs, restaurateurs, and food entrepreneurs share their stories. The business and art of food.",
+        "categories": [
+            "Food",
+            "Business",
+            "Arts"
+        ],
+        "language": "en",
+        "hostName": "Chef Maria Santos",
+        "contactEmail": "guests@culinaryconversations.fm",
+        "rssUrl": "https://feeds.libsyn.com/culinary-conversations",
+        "websiteUrl": "https://culinaryconversations.fm",
+        "audienceSizeEstimate": 195000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "travel-001",
+        "title": "Wanderlust Chronicles",
+        "description": "Travel stories, destination guides, and tips from experienced globetrotters. Inspiring your next adventure.",
+        "categories": [
+            "Travel",
+            "Society & Culture",
+            "Leisure"
+        ],
+        "language": "en",
+        "hostName": "Jack and Jill Morrison",
+        "contactEmail": "hello@wanderlustchronicles.com",
+        "rssUrl": "https://anchor.fm/s/wanderlust/podcast/rss",
+        "websiteUrl": "https://wanderlustchronicles.com",
+        "audienceSizeEstimate": 220000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "edu-001",
+        "title": "Learning Unlocked",
+        "description": "The science of learning, education innovation, and skills development. For lifelong learners and educators.",
+        "categories": [
+            "Education",
+            "Science",
+            "Self-Improvement"
+        ],
+        "language": "en",
+        "hostName": "Dr. Robert Chang",
+        "contactEmail": "booking@learningunlocked.edu",
+        "rssUrl": "https://feeds.megaphone.fm/learning-unlocked",
+        "websiteUrl": "https://learningunlocked.edu",
+        "audienceSizeEstimate": 170000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "dev-001",
+        "title": "Code & Coffee",
+        "description": "Software development, coding best practices, and tech career advice. For developers at all levels.",
+        "categories": [
+            "Technology",
+            "Education",
+            "Careers"
+        ],
+        "language": "en",
+        "hostName": "Priya Patel",
+        "contactEmail": "guests@codeandcoffee.dev",
+        "rssUrl": "https://feeds.simplecast.com/code-and-coffee",
+        "websiteUrl": "https://codeandcoffee.dev",
+        "audienceSizeEstimate": 165000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "investing-001",
+        "title": "Investor's Edge",
+        "description": "Stock market analysis, investment strategies, and financial planning from Wall Street veterans and successful investors.",
+        "categories": [
+            "Business",
+            "Finance",
+            "News"
+        ],
+        "language": "en",
+        "hostName": "Michael Chen",
+        "contactEmail": "pitch@investorsedge.fm",
+        "rssUrl": "https://feeds.buzzsprout.com/investorsedge.rss",
+        "websiteUrl": "https://investorsedge.fm",
+        "audienceSizeEstimate": 310000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "politics-001",
+        "title": "Policy Perspective",
+        "description": "Non-partisan analysis of policy issues, political trends, and governance. Informed discussions without the spin.",
+        "categories": [
+            "News",
+            "Politics",
+            "Society & Culture"
+        ],
+        "language": "en",
+        "hostName": "David Brooks",
+        "contactEmail": "guests@policyperspective.org",
+        "rssUrl": "https://feeds.libsyn.com/policy-perspective",
+        "websiteUrl": "https://policyperspective.org",
+        "audienceSizeEstimate": 245000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "film-001",
+        "title": "Cinema Spotlight",
+        "description": "Film reviews, industry analysis, and conversations with directors, actors, and screenwriters. For movie lovers.",
+        "categories": [
+            "Entertainment",
+            "Arts",
+            "TV & Film"
+        ],
+        "language": "en",
+        "hostName": "Jessica Stone",
+        "contactEmail": "booking@cinemaspotlight.fm",
+        "rssUrl": "https://anchor.fm/s/cinema-spotlight/podcast/rss",
+        "websiteUrl": "https://cinemaspotlight.fm",
+        "audienceSizeEstimate": 285000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "legal-001",
+        "title": "Law & Order Explained",
+        "description": "Making sense of legal issues, landmark cases, and the justice system. Accessible legal education for everyone.",
+        "categories": [
+            "News",
+            "Education",
+            "Society & Culture"
+        ],
+        "language": "en",
+        "hostName": "Attorney Lisa Rodriguez",
+        "contactEmail": "guests@lawexplained.fm",
+        "rssUrl": "https://feeds.megaphone.fm/law-explained",
+        "websiteUrl": "https://lawexplained.fm",
+        "audienceSizeEstimate": 135000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "security-001",
+        "title": "Cyber Secure",
+        "description": "Cybersecurity news, threats, and protection strategies. Keeping you safe in the digital world.",
+        "categories": [
+            "Technology",
+            "News",
+            "Business"
+        ],
+        "language": "en",
+        "hostName": "Mark Stevens",
+        "contactEmail": "podcast@cybersecure.fm",
+        "rssUrl": "https://feeds.simplecast.com/cyber-secure",
+        "websiteUrl": "https://cybersecure.fm",
+        "audienceSizeEstimate": 120000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "real-estate-001",
+        "title": "Property Profits",
+        "description": "Real estate investing, market analysis, and wealth building through property. From beginners to experienced investors.",
+        "categories": [
+            "Business",
+            "Finance",
+            "Education"
+        ],
+        "language": "en",
+        "hostName": "Brian Taylor",
+        "contactEmail": "guests@propertyprofits.fm",
+        "rssUrl": "https://feeds.buzzsprout.com/propertyprofits.rss",
+        "websiteUrl": "https://propertyprofits.fm",
+        "audienceSizeEstimate": 205000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "philosophy-001",
+        "title": "Think Deep",
+        "description": "Philosophical discussions on life's big questions. Ethics, meaning, consciousness, and what it means to live well.",
+        "categories": [
+            "Philosophy",
+            "Education",
+            "Society & Culture"
+        ],
+        "language": "en",
+        "hostName": "Dr. Anna Schmidt",
+        "contactEmail": "booking@thinkdeep.fm",
+        "rssUrl": "https://feeds.libsyn.com/think-deep",
+        "websiteUrl": "https://thinkdeep.fm",
+        "audienceSizeEstimate": 145000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "gaming-001",
+        "title": "Level Up",
+        "description": "Video game news, reviews, and industry analysis. Plus interviews with developers and esports professionals.",
+        "categories": [
+            "Gaming",
+            "Technology",
+            "Entertainment"
+        ],
+        "language": "en",
+        "hostName": "Tyler Wong",
+        "contactEmail": "pitch@levelup.gaming",
+        "rssUrl": "https://anchor.fm/s/level-up-gaming/podcast/rss",
+        "websiteUrl": "https://levelup.gaming",
+        "audienceSizeEstimate": 380000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "career-001",
+        "title": "Career Compass",
+        "description": "Navigate your professional journey with career advice, job search strategies, and workplace success tips.",
+        "categories": [
+            "Careers",
+            "Business",
+            "Self-Improvement"
+        ],
+        "language": "en",
+        "hostName": "Nancy Williams",
+        "contactEmail": "guests@careercompass.fm",
+        "rssUrl": "https://feeds.megaphone.fm/career-compass",
+        "websiteUrl": "https://careercompass.fm",
+        "audienceSizeEstimate": 175000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "fashion-001",
+        "title": "Style Council",
+        "description": "Fashion industry insights, sustainable style, and conversations with designers and influencers.",
+        "categories": [
+            "Fashion & Beauty",
+            "Arts",
+            "Business"
+        ],
+        "language": "en",
+        "hostName": "Victoria James",
+        "contactEmail": "booking@stylecouncil.fm",
+        "rssUrl": "https://feeds.simplecast.com/style-council",
+        "websiteUrl": "https://stylecouncil.fm",
+        "audienceSizeEstimate": 135000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "space-001",
+        "title": "Final Frontier",
+        "description": "Space exploration, astronomy, and the future of humanity among the stars. Featuring NASA scientists and space industry leaders.",
+        "categories": [
+            "Science",
+            "Technology",
+            "Education"
+        ],
+        "language": "en",
+        "hostName": "Dr. Neil Armstrong Jr.",
+        "contactEmail": "guests@finalfrontier.space",
+        "rssUrl": "https://feeds.buzzsprout.com/finalfrontier.rss",
+        "websiteUrl": "https://finalfrontier.space",
+        "audienceSizeEstimate": 290000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "sales-001",
+        "title": "Sell Smart",
+        "description": "B2B sales strategies, negotiation tactics, and revenue growth. For sales professionals and business owners.",
+        "categories": [
+            "Business",
+            "Marketing",
+            "Careers"
+        ],
+        "language": "en",
+        "hostName": "Robert King",
+        "contactEmail": "podcast@sellsmart.fm",
+        "rssUrl": "https://feeds.libsyn.com/sell-smart",
+        "websiteUrl": "https://sellsmart.fm",
+        "audienceSizeEstimate": 155000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "meditation-001",
+        "title": "Still Mind",
+        "description": "Guided meditations, mindfulness practices, and conversations about inner peace in a chaotic world.",
+        "categories": [
+            "Health & Fitness",
+            "Spirituality",
+            "Self-Improvement"
+        ],
+        "language": "en",
+        "hostName": "Zen Master Thich Minh",
+        "contactEmail": "contact@stillmind.fm",
+        "rssUrl": "https://anchor.fm/s/still-mind/podcast/rss",
+        "websiteUrl": "https://stillmind.fm",
+        "audienceSizeEstimate": 185000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "architecture-001",
+        "title": "Built Environment",
+        "description": "Architecture, urban design, and the spaces we inhabit. Interviews with architects and urban planners.",
+        "categories": [
+            "Arts",
+            "Design",
+            "Society & Culture"
+        ],
+        "language": "en",
+        "hostName": "Frank Lloyd Chen",
+        "contactEmail": "guests@builtenvironment.fm",
+        "rssUrl": "https://feeds.megaphone.fm/built-environment",
+        "websiteUrl": "https://builtenvironment.fm",
+        "audienceSizeEstimate": 95000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "ecommerce-001",
+        "title": "Shop Talk",
+        "description": "E-commerce strategies, Shopify tips, and online retail success stories. For store owners and digital entrepreneurs.",
+        "categories": [
+            "Business",
+            "Technology",
+            "Marketing"
+        ],
+        "language": "en",
+        "hostName": "Emma Davis",
+        "contactEmail": "booking@shoptalk.fm",
+        "rssUrl": "https://feeds.simplecast.com/shop-talk",
+        "websiteUrl": "https://shoptalk.fm",
+        "audienceSizeEstimate": 125000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "nonprofit-001",
+        "title": "Impact Makers",
+        "description": "Nonprofit leadership, social entrepreneurship, and making a difference. Stories from do-gooders around the world.",
+        "categories": [
+            "Society & Culture",
+            "Business",
+            "News"
+        ],
+        "language": "en",
+        "hostName": "Grace Thompson",
+        "contactEmail": "guests@impactmakers.org",
+        "rssUrl": "https://feeds.buzzsprout.com/impactmakers.rss",
+        "websiteUrl": "https://impactmakers.org",
+        "audienceSizeEstimate": 85000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "automotive-001",
+        "title": "Drive Time",
+        "description": "Car reviews, automotive industry news, and the future of transportation. For enthusiasts and everyday drivers.",
+        "categories": [
+            "Automotive",
+            "Technology",
+            "News"
+        ],
+        "language": "en",
+        "hostName": "Jake Stevens",
+        "contactEmail": "podcast@drivetime.fm",
+        "rssUrl": "https://feeds.libsyn.com/drive-time",
+        "websiteUrl": "https://drivetime.fm",
+        "audienceSizeEstimate": 215000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "pets-001",
+        "title": "Pet Parents",
+        "description": "Everything for pet lovers - training, health, behavior, and heartwarming stories. Featuring vets and animal experts.",
+        "categories": [
+            "Kids & Family",
+            "Health & Fitness",
+            "Education"
+        ],
+        "language": "en",
+        "hostName": "Dr. Samantha Vet",
+        "contactEmail": "guests@petparents.fm",
+        "rssUrl": "https://anchor.fm/s/pet-parents/podcast/rss",
+        "websiteUrl": "https://petparents.fm",
+        "audienceSizeEstimate": 150000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "vc-001",
+        "title": "Venture Voices",
+        "description": "Inside the world of venture capital. VCs share what they look for in startups and founders share their fundraising journeys.",
+        "categories": [
+            "Business",
+            "Technology",
+            "Finance"
+        ],
+        "language": "en",
+        "hostName": "Sarah Venture",
+        "contactEmail": "pitch@venturevoices.vc",
+        "rssUrl": "https://feeds.megaphone.fm/venture-voices",
+        "websiteUrl": "https://venturevoices.vc",
+        "audienceSizeEstimate": 135000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "photography-001",
+        "title": "Exposure",
+        "description": "The art and business of photography. Techniques, gear reviews, and conversations with renowned photographers.",
+        "categories": [
+            "Arts",
+            "Technology",
+            "Education"
+        ],
+        "language": "en",
+        "hostName": "Chris Aperture",
+        "contactEmail": "booking@exposure.fm",
+        "rssUrl": "https://feeds.simplecast.com/exposure",
+        "websiteUrl": "https://exposure.fm",
+        "audienceSizeEstimate": 110000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "hr-001",
+        "title": "People First",
+        "description": "HR strategies, company culture, and employee experience. For people leaders building great workplaces.",
+        "categories": [
+            "Business",
+            "Management",
+            "Careers"
+        ],
+        "language": "en",
+        "hostName": "Linda HR",
+        "contactEmail": "guests@peoplefirst.fm",
+        "rssUrl": "https://feeds.buzzsprout.com/peoplefirst.rss",
+        "websiteUrl": "https://peoplefirst.fm",
+        "audienceSizeEstimate": 95000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "true-crime-001",
+        "title": "Cold Case Files",
+        "description": "In-depth investigations of unsolved crimes and mysterious disappearances. True crime storytelling at its finest.",
+        "categories": [
+            "True Crime",
+            "Society & Culture",
+            "News"
+        ],
+        "language": "en",
+        "hostName": "Detective Sarah Jane",
+        "contactEmail": "tips@coldcasefiles.fm",
+        "rssUrl": "https://feeds.libsyn.com/cold-case-files",
+        "websiteUrl": "https://coldcasefiles.fm",
+        "audienceSizeEstimate": 650000
+    },
+    {
+        "externalSource": "sample",
+        "externalId": "yoga-001",
+        "title": "Yoga Journey",
+        "description": "Yoga philosophy, practice tips, and wellness wisdom. For practitioners of all levels seeking mind-body balance.",
+        "categories": [
+            "Health & Fitness",
+            "Spirituality",
+            "Self-Improvement"
+        ],
+        "language": "en",
+        "hostName": "Yogi Priya",
+        "contactEmail": "namaste@yogajourney.fm",
+        "rssUrl": "https://anchor.fm/s/yoga-journey/podcast/rss",
+        "websiteUrl": "https://yogajourney.fm",
+        "audienceSizeEstimate": 125000
+    }
+]

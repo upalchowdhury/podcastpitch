@@ -75,7 +75,18 @@ export const podcasts = pgTable('podcasts', {
     language: varchar('language', { length: 10 }).notNull().default('en'),
     hostName: varchar('host_name', { length: 200 }),
     contactEmail: varchar('contact_email', { length: 255 }),
-    website: varchar('website', { length: 500 }),
+    // New fields for data acquisition
+    rssUrl: varchar('rss_url', { length: 1000 }),
+    websiteUrl: varchar('website_url', { length: 500 }),
+    contactSource: varchar('contact_source', { length: 50 }).notNull().default('dataset'),
+    contactConfidence: integer('contact_confidence').notNull().default(0),
+    feedLastFetchedAt: timestamp('feed_last_fetched_at'),
+    feedEtag: varchar('feed_etag', { length: 255 }),
+    feedLastModified: varchar('feed_last_modified', { length: 255 }),
+    feedStatus: varchar('feed_status', { length: 50 }).notNull().default('not_started'),
+    contactEnrichStatus: varchar('contact_enrich_status', { length: 50 }).notNull().default('not_started'),
+    lastError: text('last_error'),
+    // Original fields
     audienceSizeEstimate: integer('audience_size_estimate'),
     imageUrl: varchar('image_url', { length: 500 }),
     searchVector: text('search_vector'), // For full-text search
@@ -85,6 +96,8 @@ export const podcasts = pgTable('podcasts', {
     externalIdx: uniqueIndex('podcasts_external_idx').on(table.externalSource, table.externalId),
     categoryIdx: index('podcasts_category_idx').on(table.categories),
     languageIdx: index('podcasts_language_idx').on(table.language),
+    feedStatusIdx: index('podcasts_feed_status_idx').on(table.feedStatus),
+    contactEmailIdx: index('podcasts_contact_email_idx').on(table.contactEmail),
 }));
 
 // =============================================================================
@@ -205,4 +218,41 @@ export const usageTracking = pgTable('usage_tracking', {
     emailsSent: integer('emails_sent').notNull().default(0),
 }, (table) => ({
     userDateIdx: uniqueIndex('usage_tracking_user_date_idx').on(table.userId, table.date),
+}));
+
+// =============================================================================
+// PODCAST EPISODES
+// =============================================================================
+
+export const podcastEpisodes = pgTable('podcast_episodes', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    podcastId: uuid('podcast_id').notNull().references(() => podcasts.id, { onDelete: 'cascade' }),
+    guid: varchar('guid', { length: 500 }).notNull(),
+    title: varchar('title', { length: 500 }).notNull(),
+    description: text('description'),
+    url: varchar('url', { length: 1000 }),
+    publishedAt: timestamp('published_at'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => ({
+    podcastGuidIdx: uniqueIndex('podcast_episodes_podcast_guid_idx').on(table.podcastId, table.guid),
+    podcastIdIdx: index('podcast_episodes_podcast_id_idx').on(table.podcastId),
+    publishedAtIdx: index('podcast_episodes_published_at_idx').on(table.publishedAt),
+}));
+
+// =============================================================================
+// INGESTION RUNS
+// =============================================================================
+
+export const ingestionRuns = pgTable('ingestion_runs', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    source: varchar('source', { length: 100 }).notNull(),
+    startedAt: timestamp('started_at').notNull().defaultNow(),
+    finishedAt: timestamp('finished_at'),
+    insertedCount: integer('inserted_count').notNull().default(0),
+    updatedCount: integer('updated_count').notNull().default(0),
+    failedCount: integer('failed_count').notNull().default(0),
+    notes: jsonb('notes').$type<Record<string, unknown>>(),
+}, (table) => ({
+    sourceIdx: index('ingestion_runs_source_idx').on(table.source),
+    startedAtIdx: index('ingestion_runs_started_at_idx').on(table.startedAt),
 }));

@@ -101,7 +101,7 @@ export class TargetListService {
             language: item.podcast.language,
             hostName: item.podcast.hostName,
             contactEmail: item.podcast.contactEmail,
-            website: item.podcast.website,
+            website: item.podcast.websiteUrl,
             audienceSizeEstimate: item.podcast.audienceSizeEstimate,
             imageUrl: item.podcast.imageUrl,
             createdAt: item.podcast.createdAt,
