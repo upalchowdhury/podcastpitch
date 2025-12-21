@@ -145,7 +145,7 @@ export interface PitchWithPodcast extends Pitch {
     podcast: Podcast;
 }
 
-export interface GeneratePitchInput {
+export interface GeneratePitchParams {
     podcastId: string;
     additionalContext?: string;
 }
