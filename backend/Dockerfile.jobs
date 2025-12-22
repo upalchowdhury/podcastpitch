@@ -1,0 +1,34 @@
+# Cloud Run Job for data import/enrichment tasks
+FROM node:20-slim AS base
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+WORKDIR /app
+
+# Copy workspace root files
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+
+# Copy shared package
+COPY shared ./shared
+
+# Copy backend
+COPY backend ./backend
+
+# Install dependencies
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+
+# Build shared package first
+WORKDIR /app/shared
+RUN pnpm build
+
+# Build backend
+WORKDIR /app/backend
+RUN pnpm build
+
+# Set working directory for runtime
+WORKDIR /app/backend
+
+# Default command (will be overridden by Cloud Run Job)
+CMD ["node", "dist/scripts/import-from-podcastindex.js"]

@@ -182,8 +182,71 @@ jobs:
             --min-instances 0 \
             --max-instances 10
 
+      - name: Build and Push Jobs Image
+        run: |
+          IMAGE_TAG="${{ env.ARTIFACT_REGISTRY }}/podcast-pitch-jobs:${{ github.sha }}"
+          docker build -f backend/Dockerfile.jobs -t $IMAGE_TAG .
+          docker push $IMAGE_TAG
+          echo "JOBS_IMAGE=$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Deploy Import Job
+        run: |
+          gcloud run jobs deploy podcast-import-job${{ env.SERVICE_SUFFIX }} \
+            --image ${{ env.JOBS_IMAGE }} \
+            --region ${{ env.GCP_REGION }} \
+            --memory 1Gi \
+            --cpu 1 \
+            --task-timeout 30m \
+            --max-retries 1 \
+            --set-env-vars "ENV=${{ env.ENVIRONMENT }},GCP_PROJECT_ID=${{ env.GCP_PROJECT_ID }}" \
+            --set-secrets "DATABASE_URL=podcast-pitch-db-url-${{ env.ENVIRONMENT }}:latest" \
+            --set-secrets "PODCAST_INDEX_API_KEY=podcast-pitch-podcastindex-key:latest" \
+            --set-secrets "PODCAST_INDEX_API_SECRET=podcast-pitch-podcastindex-secret:latest" \
+            --vpc-connector podcast-pitch-connector \
+            --vpc-egress private-ranges-only \
+            --command "node" \
+            --args "dist/scripts/import-from-podcastindex.js"
+
+      - name: Deploy RSS Enrichment Job
+        run: |
+          gcloud run jobs deploy podcast-rss-job${{ env.SERVICE_SUFFIX }} \
+            --image ${{ env.JOBS_IMAGE }} \
+            --region ${{ env.GCP_REGION }} \
+            --memory 512Mi \
+            --cpu 1 \
+            --task-timeout 30m \
+            --max-retries 1 \
+            --set-env-vars "ENV=${{ env.ENVIRONMENT }}" \
+            --set-secrets "DATABASE_URL=podcast-pitch-db-url-${{ env.ENVIRONMENT }}:latest" \
+            --vpc-connector podcast-pitch-connector \
+            --vpc-egress private-ranges-only \
+            --command "node" \
+            --args "dist/scripts/run-rss-ingestion.js"
+
+      - name: Deploy Contact Enrichment Job
+        run: |
+          gcloud run jobs deploy podcast-contacts-job${{ env.SERVICE_SUFFIX }} \
+            --image ${{ env.JOBS_IMAGE }} \
+            --region ${{ env.GCP_REGION }} \
+            --memory 512Mi \
+            --cpu 1 \
+            --task-timeout 60m \
+            --max-retries 1 \
+            --set-env-vars "ENV=${{ env.ENVIRONMENT }}" \
+            --set-secrets "DATABASE_URL=podcast-pitch-db-url-${{ env.ENVIRONMENT }}:latest" \
+            --vpc-connector podcast-pitch-connector \
+            --vpc-egress private-ranges-only \
+            --command "node" \
+            --args "dist/scripts/run-contact-enrichment.js"
+
       - name: Output deployment URLs
         run: |
           echo "API URL: $(gcloud run services describe podcast-pitch-api${{ env.SERVICE_SUFFIX }} --region ${{ env.GCP_REGION }} --format 'value(status.url)')"
           echo "Worker URL: $(gcloud run services describe podcast-pitch-worker${{ env.SERVICE_SUFFIX }} --region ${{ env.GCP_REGION }} --format 'value(status.url)')"
           echo "Frontend URL: $(gcloud run services describe podcast-pitch-frontend${{ env.SERVICE_SUFFIX }} --region ${{ env.GCP_REGION }} --format 'value(status.url)')"
+          echo ""
+          echo "To run import jobs, use:"
+          echo "  gcloud run jobs execute podcast-import-job${{ env.SERVICE_SUFFIX }} --region ${{ env.GCP_REGION }}"
+          echo "  gcloud run jobs execute podcast-rss-job${{ env.SERVICE_SUFFIX }} --region ${{ env.GCP_REGION }}"
+          echo "  gcloud run jobs execute podcast-contacts-job${{ env.SERVICE_SUFFIX }} --region ${{ env.GCP_REGION }}"
+
