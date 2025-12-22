@@ -17,7 +17,8 @@
         "db:migrate": "tsx src/db/migrate.ts",
         "db:push": "drizzle-kit push",
         "db:studio": "drizzle-kit studio",
-        "seed:podcasts": "tsx src/scripts/seed-podcasts.ts"
+        "seed:podcasts": "tsx src/scripts/seed-podcasts.ts",
+        "import:podcastindex": "tsx src/scripts/import-from-podcastindex.ts"
     },
     "dependencies": {
         "@google-cloud/secret-manager": "^5.0.1",

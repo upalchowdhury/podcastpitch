@@ -59,6 +59,11 @@ export const config = {
         level: process.env.LOG_LEVEL || 'info',
         format: process.env.LOG_FORMAT || 'json',
     },
+
+    podcastIndex: {
+        apiKey: process.env.PODCAST_INDEX_API_KEY || '',
+        apiSecret: process.env.PODCAST_INDEX_API_SECRET || '',
+    },
 };
 
 // Validate required config in production
