@@ -184,7 +184,7 @@ jobs:
 
       - name: Build and Push Jobs Image
         run: |
-          IMAGE_TAG="${{ env.ARTIFACT_REGISTRY }}/podcast-pitch-jobs:${{ github.sha }}"
+          IMAGE_TAG="${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/podcastpitch/jobs:${{ github.sha }}"
           docker build -f backend/Dockerfile.jobs -t $IMAGE_TAG .
           docker push $IMAGE_TAG
           echo "JOBS_IMAGE=$IMAGE_TAG" >> $GITHUB_ENV
