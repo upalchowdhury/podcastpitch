@@ -140,9 +140,18 @@ gcloud iam workload-identity-pools providers create-oidc github-provider \
 
 
 
+gcloud services enable run.googleapis.com --project=abstract-hydra-477523-q7
+
+gcloud projects add-iam-policy-binding abstract-hydra-477523-q7 \
+  --member="serviceAccount:906706486339-compute@developer.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
 
 
+# Replace YOUR_GEMINI_API_KEY with your actual Gemini API key
+echo -n "YOUR_GEMINI_API_KEY" | gcloud secrets create podcast-pitch-gemini-key --data-file=- --project=abstract-hydra-477523-q7
 
+gcloud services enable sqladmin.googleapis.com --project=abstract-hydra-477523-q7
+https://aistudio.google.com/app/apikey
 ## License
 
 Proprietary - All rights reserved
