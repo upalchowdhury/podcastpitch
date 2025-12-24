@@ -22,6 +22,18 @@ const CATEGORIES_TO_IMPORT = [
 ];
 
 async function importFromPodcastIndex() {
+    // Debug: Check if API credentials are available
+    const apiKey = process.env.PODCAST_INDEX_API_KEY;
+    const apiSecret = process.env.PODCAST_INDEX_API_SECRET;
+    console.log('🔑 API Key present:', apiKey ? `Yes (${apiKey.substring(0, 4)}...)` : 'NO - MISSING!');
+    console.log('🔐 API Secret present:', apiSecret ? `Yes (${apiSecret.substring(0, 4)}...)` : 'NO - MISSING!');
+
+    if (!apiKey || !apiSecret) {
+        console.error('❌ FATAL: Podcast Index API credentials not configured!');
+        console.error('Please set PODCAST_INDEX_API_KEY and PODCAST_INDEX_API_SECRET environment variables');
+        process.exit(1);
+    }
+
     const client = new PodcastIndexClient();
 
     console.log('🎙️ Starting Podcast Index import...');
