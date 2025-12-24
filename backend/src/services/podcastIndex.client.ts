@@ -61,16 +61,13 @@ export class PodcastIndexClient {
     }
 
     private getCredentials(): { apiKey: string; apiSecret: string } {
-        // Read directly from process.env at request time to ensure Cloud Run secrets are available
-        // Trim to remove any trailing newlines that GCP Secret Manager might add
-        const apiKey = (process.env.PODCAST_INDEX_API_KEY || '').trim();
-        const apiSecret = (process.env.PODCAST_INDEX_API_SECRET || '').trim();
+        // TEMPORARY HARDCODE FOR DEBUGGING - REVERT AFTER TESTING
+        const apiKey = 'TJWZJKN9PQ98VUGKAKQJ';
+        const apiSecret = 'MqGbXtmNMXtwdqkjS6Be^DhS';
 
-        if (!apiKey || !apiSecret) {
-            console.error('❌ Missing PODCAST_INDEX credentials:');
-            console.error('   PODCAST_INDEX_API_KEY:', apiKey ? 'present' : 'MISSING');
-            console.error('   PODCAST_INDEX_API_SECRET:', apiSecret ? 'present' : 'MISSING');
-        }
+        console.log('🔑 Using hardcoded credentials for debugging');
+        console.log('   API Key length:', apiKey.length);
+        console.log('   API Secret length:', apiSecret.length);
 
         return { apiKey, apiSecret };
     }
