@@ -27,6 +27,7 @@ router.get('/', async (req, res, next) => {
 // POST /api/pitches/generate
 router.post('/generate', validateBody(generatePitchSchema), async (req, res, next) => {
     try {
+        console.log('[Pitch Generate] Request:', { userId: req.user!.userId, podcastId: req.body.podcastId });
         const pitch = await PitchService.generate(
             req.user!.userId,
             req.body.podcastId,
@@ -34,6 +35,7 @@ router.post('/generate', validateBody(generatePitchSchema), async (req, res, nex
         );
         res.status(201).json({ success: true, data: pitch });
     } catch (error) {
+        console.error('[Pitch Generate] Error:', error);
         next(error);
     }
 });

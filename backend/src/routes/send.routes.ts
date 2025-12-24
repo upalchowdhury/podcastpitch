@@ -30,7 +30,8 @@ router.post('/schedule', validateBody(scheduleSendSchema), async (req, res, next
             req.user!.userId,
             req.body.pitchId,
             req.body.emailAccountId,
-            req.body.scheduledAt ? new Date(req.body.scheduledAt) : undefined
+            req.body.scheduledAt ? new Date(req.body.scheduledAt) : undefined,
+            req.body.recipientEmail
         );
         res.status(201).json({ success: true, data: job });
     } catch (error) {

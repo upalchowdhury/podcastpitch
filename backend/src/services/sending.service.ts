@@ -26,7 +26,8 @@ export class SendingService {
         userId: string,
         pitchId: string,
         emailAccountId: string,
-        scheduledAt?: Date
+        scheduledAt?: Date,
+        recipientEmail?: string
     ): Promise<SendJob> {
         // Verify pitch ownership
         const pitch = await db.query.pitches.findFirst({
@@ -68,12 +69,13 @@ export class SendingService {
             );
         }
 
-        // Create send job
+        // Create send job with recipient email
         const [job] = await db
             .insert(sendJobs)
             .values({
                 pitchId,
                 emailAccountId,
+                recipientEmail,
                 scheduledAt: scheduledAt || new Date(),
                 provider: emailAccount.providerType,
                 status: 'pending',
@@ -92,8 +94,19 @@ export class SendingService {
             .set({ status: 'scheduled', updatedAt: new Date() })
             .where(eq(pitches.id, pitchId));
 
-        // TODO: Enqueue Cloud Tasks job for async processing
-        // This would be done in production with Cloud Tasks
+        // If no scheduledAt provided (Send Now), process immediately
+        if (!scheduledAt) {
+            console.log('[SendingService] Send Now detected, processing job immediately:', job.id);
+            // Process asynchronously but don't block the response
+            this.processSendJob(job.id).then(() => {
+                console.log('[SendingService] Job processed successfully:', job.id);
+            }).catch(err => {
+                console.error('[SendingService] Job processing failed:', job.id, err);
+                logger.error({ jobId: job.id, error: err }, 'Failed to process send job');
+            });
+        } else {
+            console.log('[SendingService] Scheduled for later:', scheduledAt);
+        }
 
         return this.mapSendJob(job);
     }
@@ -251,12 +264,17 @@ export class SendingService {
                 throw new Error('Email account not found');
             }
 
-            const podcast = await db.query.podcasts.findFirst({
-                where: eq(podcasts.id, pitch.podcastId),
-            });
+            // Get recipient email from job or fallback to podcast
+            let recipientEmail = job.recipientEmail;
+            if (!recipientEmail) {
+                const podcast = await db.query.podcasts.findFirst({
+                    where: eq(podcasts.id, pitch.podcastId),
+                });
+                recipientEmail = podcast?.contactEmail || null;
+            }
 
-            if (!podcast || !podcast.contactEmail) {
-                throw new Error('Podcast contact email not found');
+            if (!recipientEmail) {
+                throw new Error('No recipient email found');
             }
 
             // Get subject and body (prefer edited versions)
@@ -267,7 +285,7 @@ export class SendingService {
             if (emailAccount.providerType === 'smtp') {
                 await this.sendViaSMTP(
                     emailAccount,
-                    podcast.contactEmail,
+                    recipientEmail,
                     subject,
                     body,
                     jobId
@@ -351,15 +369,30 @@ export class SendingService {
         body: string,
         jobId: string
     ): Promise<void> {
-        // In production, fetch SMTP config from Secret Manager
-        // For now, we'll use a placeholder
+        // Decrypt SMTP config from encryptedSecretRef
+        const { decryptObject } = await import('../utils/encryption.js');
+
+        interface SmtpConfig {
+            host: string;
+            port: number;
+            secure: boolean;
+            username: string;
+            password: string;
+        }
+
+        if (!emailAccount.encryptedSecretRef) {
+            throw new Error('No SMTP configuration found for this email account');
+        }
+
+        const smtpConfig = decryptObject<SmtpConfig>(emailAccount.encryptedSecretRef);
+
         const transporter = nodemailer.createTransport({
-            host: 'smtp.example.com',
-            port: 587,
-            secure: false,
+            host: smtpConfig.host,
+            port: smtpConfig.port,
+            secure: smtpConfig.secure || smtpConfig.port === 465,
             auth: {
-                user: 'placeholder',
-                pass: 'placeholder',
+                user: smtpConfig.username,
+                pass: smtpConfig.password,
             },
         });
 

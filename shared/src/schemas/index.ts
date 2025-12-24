@@ -75,12 +75,14 @@ export const createEmailAccountSchema = z.object({
 
 export const podcastSearchSchema = z.object({
     query: z.string().optional(),
-    categories: z.array(z.string()).optional(),
+    categories: z.union([z.string(), z.array(z.string())])
+        .transform(val => typeof val === 'string' ? [val] : val)
+        .optional(),
     language: z.string().optional(),
-    minAudienceSize: z.number().int().min(0).optional(),
-    maxAudienceSize: z.number().int().min(0).optional(),
-    page: z.number().int().min(1).default(1),
-    limit: z.number().int().min(1).max(100).default(20),
+    minAudienceSize: z.coerce.number().int().min(0).optional(),
+    maxAudienceSize: z.coerce.number().int().min(0).optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
 export const podcastIngestionSchema = z.object({

@@ -153,6 +153,7 @@ export const sendJobs = pgTable('send_jobs', {
     id: uuid('id').primaryKey().defaultRandom(),
     pitchId: uuid('pitch_id').notNull().references(() => pitches.id, { onDelete: 'cascade' }),
     emailAccountId: uuid('email_account_id').notNull().references(() => emailAccounts.id),
+    recipientEmail: varchar('recipient_email', { length: 255 }),
     scheduledAt: timestamp('scheduled_at').notNull(),
     provider: varchar('provider', { length: 50 }).notNull(),
     status: varchar('status', { length: 50 }).notNull().default('pending'),

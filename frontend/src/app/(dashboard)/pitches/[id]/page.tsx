@@ -111,9 +111,9 @@ export default function PitchEditorPage() {
                 </Link>
                 <div className="flex-1">
                     <h1 className="text-2xl font-bold text-gray-900">
-                        Pitch to {pitch.podcast.title}
+                        Pitch to {pitch.podcast?.title || 'Podcast'}
                     </h1>
-                    {pitch.podcast.hostName && (
+                    {pitch.podcast?.hostName && (
                         <p className="text-gray-500">Hosted by {pitch.podcast.hostName}</p>
                     )}
                 </div>
@@ -176,24 +176,28 @@ export default function PitchEditorPage() {
                 {/* Podcast Info */}
                 <div className="card h-fit">
                     <h3 className="font-semibold text-gray-900 mb-4">Podcast Info</h3>
-                    <div className="space-y-3 text-sm">
-                        <div>
-                            <p className="text-gray-500">Title</p>
-                            <p className="font-medium">{pitch.podcast.title}</p>
-                        </div>
-                        {pitch.podcast.hostName && (
+                    {pitch.podcast ? (
+                        <div className="space-y-3 text-sm">
                             <div>
-                                <p className="text-gray-500">Host</p>
-                                <p className="font-medium">{pitch.podcast.hostName}</p>
+                                <p className="text-gray-500">Title</p>
+                                <p className="font-medium">{pitch.podcast.title}</p>
                             </div>
-                        )}
-                        <div>
-                            <p className="text-gray-500">Description</p>
-                            <p className="text-gray-600 line-clamp-4">
-                                {pitch.podcast.description}
-                            </p>
+                            {pitch.podcast.hostName && (
+                                <div>
+                                    <p className="text-gray-500">Host</p>
+                                    <p className="font-medium">{pitch.podcast.hostName}</p>
+                                </div>
+                            )}
+                            <div>
+                                <p className="text-gray-500">Description</p>
+                                <p className="text-gray-600 line-clamp-4">
+                                    {pitch.podcast.description}
+                                </p>
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        <p className="text-sm text-gray-500">Podcast info not available</p>
+                    )}
                 </div>
             </div>
         </div>

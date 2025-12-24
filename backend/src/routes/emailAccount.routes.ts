@@ -22,9 +22,11 @@ router.get('/', async (req, res, next) => {
 // POST /api/email-accounts
 router.post('/', validateBody(createEmailAccountSchema), async (req, res, next) => {
     try {
+        console.log('[Email Account] Creating:', { userId: req.user!.userId, body: { ...req.body, smtpConfig: { ...req.body.smtpConfig, password: '***' } } });
         const account = await EmailAccountService.create(req.user!.userId, req.body);
         res.status(201).json({ success: true, data: account });
     } catch (error) {
+        console.error('[Email Account] Create failed:', error);
         next(error);
     }
 });
@@ -45,9 +47,11 @@ router.get('/:id', validateParams(idParamSchema), async (req, res, next) => {
 // DELETE /api/email-accounts/:id
 router.delete('/:id', validateParams(idParamSchema), async (req, res, next) => {
     try {
+        console.log('[Email Account] Deleting:', req.params.id);
         await EmailAccountService.delete(req.user!.userId, req.params.id);
         res.json({ success: true, data: { message: 'Email account deleted' } });
     } catch (error) {
+        console.error('[Email Account] Delete failed:', error);
         next(error);
     }
 });

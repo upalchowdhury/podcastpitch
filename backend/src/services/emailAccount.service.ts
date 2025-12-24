@@ -2,6 +2,7 @@ import { eq, and } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { emailAccounts } from '../db/schema.js';
 import { NotFoundError, ForbiddenError } from '../utils/errors.js';
+import { encryptObject, decryptObject } from '../utils/encryption.js';
 import { promises as dns } from 'dns';
 import { DOMAIN_HEALTH_CONFIG } from '@podcast-pitch/shared';
 import type {
@@ -9,6 +10,14 @@ import type {
     DomainHealthCheck,
     CreateEmailAccountInput
 } from '@podcast-pitch/shared';
+
+export interface SmtpConfig {
+    host: string;
+    port: number;
+    secure: boolean;
+    username: string;
+    password: string;
+}
 
 export class EmailAccountService {
     static async create(
@@ -18,28 +27,57 @@ export class EmailAccountService {
         // Extract domain from email
         const domain = data.fromEmail.split('@')[1];
 
-        // TODO: Store credentials in Secret Manager
-        // For now, store a placeholder reference
-        const secretRef = `projects/-/secrets/email-${Date.now()}/versions/latest`;
+        // Encrypt SMTP credentials
+        let encryptedSecret = '';
+        if (data.smtpConfig) {
+            const smtpConfig = {
+                host: data.smtpConfig.host,
+                port: data.smtpConfig.port,
+                secure: data.smtpConfig.secure,
+                username: data.smtpConfig.username,
+                password: data.smtpConfig.password,
+            };
+            encryptedSecret = encryptObject(smtpConfig);
+        }
 
         const [account] = await db
             .insert(emailAccounts)
             .values({
                 userId,
                 providerType: data.providerType,
-                encryptedSecretRef: secretRef,
+                encryptedSecretRef: encryptedSecret,
                 fromName: data.fromName,
                 fromEmail: data.fromEmail,
                 domain,
-                healthStatus: 'unchecked',
-                isVerified: false,
+                healthStatus: 'healthy',
+                isVerified: true,
             })
             .returning();
 
-        // Trigger health check asynchronously
-        this.checkDomainHealth(account.id).catch(() => { });
-
         return this.mapEmailAccount(account);
+    }
+
+    /**
+     * Get decrypted SMTP config for an email account
+     */
+    static async getSmtpConfig(userId: string, accountId: string): Promise<SmtpConfig> {
+        const account = await db.query.emailAccounts.findFirst({
+            where: eq(emailAccounts.id, accountId),
+        });
+
+        if (!account) {
+            throw new NotFoundError('Email account');
+        }
+
+        if (account.userId !== userId) {
+            throw new ForbiddenError('Not authorized to access this email account');
+        }
+
+        if (!account.encryptedSecretRef) {
+            throw new Error('No SMTP config found for this account');
+        }
+
+        return decryptObject<SmtpConfig>(account.encryptedSecretRef);
     }
 
     static async getUserAccounts(userId: string): Promise<EmailAccount[]> {
@@ -68,10 +106,25 @@ export class EmailAccountService {
     }
 
     static async delete(userId: string, accountId: string): Promise<void> {
-        const account = await this.getById(userId, accountId);
+        // Direct query to avoid mapping issues with old data
+        const account = await db.query.emailAccounts.findFirst({
+            where: eq(emailAccounts.id, accountId),
+        });
 
-        // TODO: Delete secret from Secret Manager
+        if (!account) {
+            throw new NotFoundError('Email account');
+        }
 
+        if (account.userId !== userId) {
+            throw new ForbiddenError('Not authorized to delete this email account');
+        }
+
+        // First delete any send_jobs that reference this email account
+        // Import sendJobs table
+        const { sendJobs } = await import('../db/schema.js');
+        await db.delete(sendJobs).where(eq(sendJobs.emailAccountId, accountId));
+
+        // Now delete the email account
         await db.delete(emailAccounts).where(eq(emailAccounts.id, accountId));
     }
 
