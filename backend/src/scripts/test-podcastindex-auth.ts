@@ -20,9 +20,13 @@ if (!apiKey || !apiSecret) {
     process.exit(1);
 }
 
+// Store non-null values after guard check
+const key: string = apiKey;
+const secret: string = apiSecret;
+
 async function testAuth() {
     const authDate = Math.floor(Date.now() / 1000).toString();
-    const authString = apiKey + apiSecret + authDate;
+    const authString = key + secret + authDate;
     const authHash = crypto.createHash('sha1').update(authString).digest('hex');
 
     console.log('\n📡 Making test request to /podcasts/trending...');
@@ -34,7 +38,7 @@ async function testAuth() {
         headers: {
             'User-Agent': 'PodcastPitch/1.0',
             'X-Auth-Date': authDate,
-            'X-Auth-Key': apiKey!,
+            'X-Auth-Key': key,
             'Authorization': authHash,
         },
     });
@@ -42,10 +46,10 @@ async function testAuth() {
     console.log('\nResponse Status:', response.status, response.statusText);
 
     if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as { count: number; feeds?: Array<{ title: string }> };
         console.log('✅ SUCCESS! Found', data.count, 'trending podcasts');
         console.log('\nSample podcasts:');
-        data.feeds?.slice(0, 3).forEach((feed: any) => {
+        data.feeds?.slice(0, 3).forEach((feed) => {
             console.log(`  - ${feed.title}`);
         });
     } else {
@@ -55,3 +59,4 @@ async function testAuth() {
 }
 
 testAuth().catch(console.error);
+
