@@ -63,7 +63,10 @@ export default function ScheduleSendPage() {
 
         // Get recipient email - either manual or from podcast
         const recipient = manualEmail || pitch.podcast?.contactEmail;
+        console.log('[DEBUG] handleSend', { manualEmail, contactEmail: pitch.podcast?.contactEmail, recipient });
+
         if (!recipient) {
+            console.log('[DEBUG] No recipient found');
             setError('Please enter a recipient email address');
             return;
         }
@@ -72,12 +75,14 @@ export default function ScheduleSendPage() {
         setError('');
 
         try {
+            console.log('[DEBUG] Calling sendApi.schedule with:', { pitchId: pitch.id, selectedAccount, scheduledAt: sendNow ? undefined : scheduledAt, recipient });
             await sendApi.schedule(
                 pitch.id,
                 selectedAccount,
                 sendNow ? undefined : scheduledAt,
                 recipient
             );
+            console.log('[DEBUG] Schedule success');
             router.push('/pitches');
         } catch (err: any) {
             console.error('Failed to schedule send:', err);

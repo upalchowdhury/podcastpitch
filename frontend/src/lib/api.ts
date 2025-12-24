@@ -167,7 +167,7 @@ export const emailAccountApi = {
 // Send API
 export const sendApi = {
     schedule: (pitchId: string, emailAccountId: string, scheduledAt?: string, recipientEmail?: string) =>
-        api.post<any>('/api/send/schedule', { pitchId, emailAccountId, scheduledAt, recipientEmail }),
+        api.post<any>('/api/send/schedule?v=2', { pitchId, emailAccountId, scheduledAt, recipientEmail }),
     bulkSchedule: (data: any) => api.post<any[]>('/api/send/bulk-schedule', data),
     getJobs: () => api.get<any[]>('/api/send/jobs'),
     cancelJob: (id: string) => api.post<any>(`/api/send/jobs/${id}/cancel`),

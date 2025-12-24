@@ -26,6 +26,7 @@ router.get('/jobs', async (req, res, next) => {
 // POST /api/send/schedule
 router.post('/schedule', validateBody(scheduleSendSchema), async (req, res, next) => {
     try {
+        console.log('[SEND] Request body:', JSON.stringify(req.body));
         const job = await SendingService.scheduleSend(
             req.user!.userId,
             req.body.pitchId,

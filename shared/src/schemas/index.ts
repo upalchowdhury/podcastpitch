@@ -141,6 +141,7 @@ export const scheduleSendSchema = z.object({
     pitchId: z.string().uuid('Invalid pitch ID'),
     scheduledAt: z.string().datetime().optional(), // ISO 8601, defaults to now
     emailAccountId: z.string().uuid('Invalid email account ID'),
+    recipientEmail: z.string().email('Invalid recipient email').optional(),
 });
 
 export const bulkScheduleSendSchema = z.object({
