@@ -1,6 +1,4 @@
 import crypto from 'crypto';
-import { config } from '../config/index.js';
-import { logger } from '../utils/logger.js';
 
 interface PodcastIndexFeed {
     id: number;
@@ -55,29 +53,37 @@ export interface PodcastIndexPodcast {
 }
 
 export class PodcastIndexClient {
-    private apiKey: string;
-    private apiSecret: string;
     private baseUrl = 'https://api.podcastindex.org/api/1.0';
     private userAgent = 'PodcastPitch/1.0';
 
     constructor() {
-        this.apiKey = config.podcastIndex?.apiKey || '';
-        this.apiSecret = config.podcastIndex?.apiSecret || '';
+        // Credentials are read at request time from process.env, not at construction
+    }
 
-        if (!this.apiKey || !this.apiSecret) {
-            logger.warn('Podcast Index API credentials not configured');
+    private getCredentials(): { apiKey: string; apiSecret: string } {
+        // Read directly from process.env at request time to ensure Cloud Run secrets are available
+        const apiKey = process.env.PODCAST_INDEX_API_KEY || '';
+        const apiSecret = process.env.PODCAST_INDEX_API_SECRET || '';
+
+        if (!apiKey || !apiSecret) {
+            console.error('❌ Missing PODCAST_INDEX credentials:');
+            console.error('   PODCAST_INDEX_API_KEY:', apiKey ? 'present' : 'MISSING');
+            console.error('   PODCAST_INDEX_API_SECRET:', apiSecret ? 'present' : 'MISSING');
         }
+
+        return { apiKey, apiSecret };
     }
 
     private getAuthHeaders(): Record<string, string> {
+        const { apiKey, apiSecret } = this.getCredentials();
         const authDate = Math.floor(Date.now() / 1000).toString();
-        const authString = this.apiKey + this.apiSecret + authDate;
+        const authString = apiKey + apiSecret + authDate;
         const authHash = crypto.createHash('sha1').update(authString).digest('hex');
 
         return {
             'User-Agent': this.userAgent,
             'X-Auth-Date': authDate,
-            'X-Auth-Key': this.apiKey,
+            'X-Auth-Key': apiKey,
             'Authorization': authHash,
         };
     }
