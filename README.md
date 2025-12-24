@@ -152,6 +152,23 @@ echo -n "YOUR_GEMINI_API_KEY" | gcloud secrets create podcast-pitch-gemini-key -
 
 gcloud services enable sqladmin.googleapis.com --project=abstract-hydra-477523-q7
 https://aistudio.google.com/app/apikey
+
+
+
+
+# 1. Import podcasts (~800+)
+gcloud run jobs execute podcast-import-job --region us-central1
+
+# 2. Enrich with RSS feeds (episodes, emails)
+gcloud run jobs execute podcast-rss-job --region us-central1
+
+# 3. Discover contact emails via web crawling
+gcloud run jobs execute podcast-contacts-job --region us-central1
+
+echo -n "TJWZJKN9PQ98VUGKAKQJ" | gcloud secrets versions add podcast-pitch-podcastindex-key --data-file=- --project=abstract-hydra-477523-q7
+
+echo -n "MqGbXtmNMXtwdqkjS6Be^DhS" | gcloud secrets versions add podcast-pitch-podcastindex-secret --data-file=- --project=abstract-hydra-477523-q7
+
 ## License
 
 Proprietary - All rights reserved
