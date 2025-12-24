@@ -62,8 +62,9 @@ export class PodcastIndexClient {
 
     private getCredentials(): { apiKey: string; apiSecret: string } {
         // Read directly from process.env at request time to ensure Cloud Run secrets are available
-        const apiKey = process.env.PODCAST_INDEX_API_KEY || '';
-        const apiSecret = process.env.PODCAST_INDEX_API_SECRET || '';
+        // Trim to remove any trailing newlines that GCP Secret Manager might add
+        const apiKey = (process.env.PODCAST_INDEX_API_KEY || '').trim();
+        const apiSecret = (process.env.PODCAST_INDEX_API_SECRET || '').trim();
 
         if (!apiKey || !apiSecret) {
             console.error('❌ Missing PODCAST_INDEX credentials:');
