@@ -202,8 +202,6 @@ jobs:
             --set-secrets "DATABASE_URL=podcast-pitch-db-url-${{ env.ENVIRONMENT }}:latest" \
             --set-secrets "PODCAST_INDEX_API_KEY=podcast-pitch-podcastindex-key:latest" \
             --set-secrets "PODCAST_INDEX_API_SECRET=podcast-pitch-podcastindex-secret:latest" \
-            --vpc-connector podcast-pitch-connector \
-            --vpc-egress private-ranges-only \
             --command "node" \
             --args "dist/scripts/import-from-podcastindex.js"
 

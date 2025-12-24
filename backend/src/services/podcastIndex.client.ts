@@ -61,13 +61,16 @@ export class PodcastIndexClient {
     }
 
     private getCredentials(): { apiKey: string; apiSecret: string } {
-        // TEMPORARY HARDCODE FOR DEBUGGING - REVERT AFTER TESTING
-        const apiKey = 'TJWZJKN9PQ98VUGKAKQJ';
-        const apiSecret = 'MqGbXtmNMXtwdqkjS6Be^DhS';
+        // Read directly from process.env at request time
+        const apiKey = (process.env.PODCAST_INDEX_API_KEY || '').trim();
+        const apiSecret = (process.env.PODCAST_INDEX_API_SECRET || '').trim();
 
-        console.log('🔑 Using hardcoded credentials for debugging');
-        console.log('   API Key length:', apiKey.length);
-        console.log('   API Secret length:', apiSecret.length);
+        console.log('🔑 API Key present:', apiKey ? `Yes (${apiKey.substring(0, 4)}...)` : 'NO - MISSING!');
+        console.log('🔐 API Secret present:', apiSecret ? `Yes (${apiSecret.substring(0, 4)}...)` : 'NO - MISSING!');
+
+        if (!apiKey || !apiSecret) {
+            console.error('❌ FATAL: Missing PODCAST_INDEX credentials');
+        }
 
         return { apiKey, apiSecret };
     }
