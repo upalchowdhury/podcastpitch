@@ -34,9 +34,22 @@ app.use(helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 
-// CORS
+// CORS - allow multiple origins for different environments
+const allowedOrigins = [
+    config.urls.frontend,
+    'https://podcast-pitch-frontend-906706486339.us-central1.run.app',
+    'https://podcastpitch.xyz',
+    'https://www.podcastpitch.xyz',
+];
 app.use(cors({
-    origin: config.urls.frontend,
+    origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
 }));
 
