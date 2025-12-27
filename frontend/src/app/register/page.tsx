@@ -52,7 +52,7 @@ export default function RegisterPage() {
                 // Profile fetch failed, continue anyway
             }
 
-            router.push('/onboarding');
+            router.push('/dashboard');
         } catch (err: any) {
             setError(err.message || 'Registration failed');
         } finally {
