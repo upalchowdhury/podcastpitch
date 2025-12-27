@@ -46,6 +46,8 @@ const limiter = rateLimit({
     max: 1000, // Limit each IP to 1000 requests per window
     standardHeaders: true,
     legacyHeaders: false,
+    // Disable trust proxy validation since Cloud Run is a trusted proxy
+    validate: { trustProxy: false },
 });
 app.use('/api/', limiter);
 
