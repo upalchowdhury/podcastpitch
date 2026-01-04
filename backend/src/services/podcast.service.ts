@@ -128,16 +128,30 @@ export class PodcastService {
         const { query, categories, language, minAudienceSize, maxAudienceSize, limit, offset } = params;
         const conditions = [];
 
-        // Text search with ILIKE on title, description, publisher
+        // Improved text search: split query into words and match ANY word (OR logic)
+        // This makes "mountain biking trails" find podcasts with "mountain" OR "biking" OR "trails"
         if (query) {
-            conditions.push(
-                or(
-                    ilike(podcasts.title, `%${query}%`),
-                    ilike(podcasts.description, `%${query}%`),
-                    ilike(podcasts.publisher, `%${query}%`),
-                    ilike(podcasts.hostName, `%${query}%`)
-                )
-            );
+            // Split query into words, filter out short words (< 3 chars)
+            const words = query
+                .toLowerCase()
+                .split(/\s+/)
+                .filter(word => word.length >= 3)
+                .slice(0, 5); // Limit to 5 words max for performance
+
+            if (words.length > 0) {
+                // Create OR condition for each word across all searchable fields
+                const wordConditions = words.map(word =>
+                    or(
+                        ilike(podcasts.title, `%${word}%`),
+                        ilike(podcasts.description, `%${word}%`),
+                        ilike(podcasts.publisher, `%${word}%`),
+                        ilike(podcasts.hostName, `%${word}%`)
+                    )
+                );
+
+                // Match if ANY word is found (OR between words)
+                conditions.push(or(...wordConditions));
+            }
         }
 
         // Category filter
