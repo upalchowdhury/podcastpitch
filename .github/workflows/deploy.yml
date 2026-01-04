@@ -151,6 +151,7 @@ jobs:
             --set-secrets "DATABASE_URL=podcast-pitch-db-url-${{ env.ENVIRONMENT }}:latest" \
             --set-secrets "JWT_SECRET=podcast-pitch-jwt-secret-${{ env.ENVIRONMENT }}:latest" \
             --set-secrets "GEMINI_API_KEY=podcast-pitch-gemini-key:latest" \
+            --set-secrets "LISTEN_NOTES_API_KEY=podcast-pitch-listennotes-key:latest" \
             --add-cloudsql-instances=${{ env.GCP_PROJECT_ID }}:${{ env.GCP_REGION }}:podcastpitch
 
       - name: Deploy Worker to Cloud Run

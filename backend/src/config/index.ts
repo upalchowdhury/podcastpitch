@@ -64,6 +64,17 @@ export const config = {
         apiKey: process.env.PODCAST_INDEX_API_KEY || '',
         apiSecret: process.env.PODCAST_INDEX_API_SECRET || '',
     },
+
+    listenNotes: {
+        apiKey: process.env.LISTEN_NOTES_API_KEY || '',
+        baseUrl: 'https://listen-api.listennotes.com/api/v2',
+        // Search thresholds
+        localMinResults: 20,
+        lnPageSize: 10,
+        lnMaxPagesPerQuery: 3,
+        cacheTtlDays: 30,
+        enrichmentCooldownDays: 7,
+    },
 };
 
 // Validate required config in production

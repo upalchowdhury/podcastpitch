@@ -1,7 +1,9 @@
-import { eq, and, sql, ilike, inArray } from 'drizzle-orm';
+import { eq, and, sql, desc, or, ilike } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { podcasts } from '../db/schema.js';
+import { podcasts, podcastSources } from '../db/schema.js';
 import { NotFoundError } from '../utils/errors.js';
+import { config } from '../config/index.js';
+import { listenNotesClient, type ListenNotesPodcast } from './listenNotes.client.js';
 import type {
     Podcast,
     PodcastSearchParams,
@@ -9,8 +11,34 @@ import type {
     PodcastIngestionInput
 } from '@podcast-pitch/shared';
 
+// =============================================================================
+// EXTENDED TYPES FOR HYBRID SEARCH
+// =============================================================================
+
+export interface HybridSearchResult extends PodcastSearchResult {
+    sourceBreakdown: {
+        local: number;
+        listenNotes: number;
+    };
+    nextOffset?: number;
+}
+
+// =============================================================================
+// PODCAST SERVICE WITH HYBRID SEARCH
+// =============================================================================
+
 export class PodcastService {
-    static async search(params: PodcastSearchParams): Promise<PodcastSearchResult> {
+    /**
+     * Hybrid search: Local-first with Listen Notes fallback
+     * 
+     * Algorithm:
+     * 1. Search local DB first using FTS
+     * 2. If results < LOCAL_MIN_RESULTS, call Listen Notes
+     * 3. Upsert LN results into local DB
+     * 4. Merge and dedupe by external_id
+     * 5. Return combined results with source breakdown
+     */
+    static async search(params: PodcastSearchParams): Promise<HybridSearchResult> {
         const {
             query,
             categories,
@@ -22,16 +50,93 @@ export class PodcastService {
         } = params;
 
         const offset = (page - 1) * limit;
+        const localMinResults = config.listenNotes.localMinResults;
+
+        // Step 1: Search local DB first
+        const localResults = await this.searchLocal({
+            query,
+            categories,
+            language,
+            minAudienceSize,
+            maxAudienceSize,
+            limit: Math.max(limit, localMinResults),
+            offset,
+        });
+
+        let listenNotesCount = 0;
+        let nextOffset: number | undefined;
+
+        // Step 2: If local results insufficient, fetch from Listen Notes
+        if (localResults.podcasts.length < localMinResults && query && listenNotesClient.isConfigured()) {
+            console.log(`📊 Local results (${localResults.podcasts.length}) < threshold (${localMinResults}), fetching from Listen Notes...`);
+
+            try {
+                const lnResult = await listenNotesClient.search({
+                    query,
+                    offset: 0,
+                    language: language || 'English',
+                    safeMode: true,
+                });
+
+                // Step 3: Upsert Listen Notes results
+                if (lnResult.podcasts.length > 0) {
+                    await this.upsertListenNotesPodcasts(lnResult.podcasts);
+                    listenNotesCount = lnResult.podcasts.length;
+                    nextOffset = lnResult.nextOffset;
+                }
+
+                console.log(`✅ Ingested ${listenNotesCount} podcasts from Listen Notes`);
+            } catch (error) {
+                console.error('Listen Notes API error:', error);
+                // Continue with local results only
+            }
+        }
+
+        // Step 4: Re-query local DB to get merged results
+        const mergedResults = await this.searchLocal({
+            query,
+            categories,
+            language,
+            minAudienceSize,
+            maxAudienceSize,
+            limit,
+            offset,
+        });
+
+        return {
+            ...mergedResults,
+            sourceBreakdown: {
+                local: localResults.podcasts.length,
+                listenNotes: listenNotesCount,
+            },
+            nextOffset,
+        };
+    }
+
+    /**
+     * Search local database only
+     */
+    private static async searchLocal(params: {
+        query?: string;
+        categories?: string[];
+        language?: string;
+        minAudienceSize?: number;
+        maxAudienceSize?: number;
+        limit: number;
+        offset: number;
+    }): Promise<PodcastSearchResult> {
+        const { query, categories, language, minAudienceSize, maxAudienceSize, limit, offset } = params;
         const conditions = [];
 
-        // Text search
+        // Text search with ILIKE on title, description, publisher
         if (query) {
             conditions.push(
-                sql`(
-          ${podcasts.title} ILIKE ${'%' + query + '%'} OR 
-          ${podcasts.description} ILIKE ${'%' + query + '%'} OR
-          ${podcasts.hostName} ILIKE ${'%' + query + '%'}
-        )`
+                or(
+                    ilike(podcasts.title, `%${query}%`),
+                    ilike(podcasts.description, `%${query}%`),
+                    ilike(podcasts.publisher, `%${query}%`),
+                    ilike(podcasts.hostName, `%${query}%`)
+                )
             );
         }
 
@@ -55,9 +160,7 @@ export class PodcastService {
             conditions.push(sql`${podcasts.audienceSizeEstimate} <= ${maxAudienceSize}`);
         }
 
-        const whereClause = conditions.length > 0
-            ? and(...conditions)
-            : undefined;
+        const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
         // Get total count
         const [{ count }] = await db
@@ -65,24 +168,31 @@ export class PodcastService {
             .from(podcasts)
             .where(whereClause);
 
-        // Get paginated results
+        // Get paginated results, ordered by listen_score, then last_seen_at
         const results = await db
             .select()
             .from(podcasts)
             .where(whereClause)
-            .orderBy(sql`${podcasts.audienceSizeEstimate} DESC NULLS LAST`)
+            .orderBy(
+                desc(podcasts.listenScore),
+                desc(podcasts.lastSeenAt),
+                desc(podcasts.audienceSizeEstimate)
+            )
             .limit(limit)
             .offset(offset);
 
         return {
             podcasts: results.map(this.mapPodcast),
             total: count,
-            page,
+            page: Math.floor(offset / limit) + 1,
             limit,
             hasMore: offset + results.length < count,
         };
     }
 
+    /**
+     * Get podcast by ID with optional enrichment from Listen Notes
+     */
     static async getById(id: string): Promise<Podcast> {
         const podcast = await db.query.podcasts.findFirst({
             where: eq(podcasts.id, id),
@@ -92,9 +202,145 @@ export class PodcastService {
             throw new NotFoundError('Podcast');
         }
 
+        // Check if enrichment is needed (last enriched > 7 days ago or never)
+        const enrichmentCooldownDays = config.listenNotes.enrichmentCooldownDays;
+        const shouldEnrich = !podcast.lastEnrichedAt ||
+            (Date.now() - podcast.lastEnrichedAt.getTime()) > enrichmentCooldownDays * 24 * 60 * 60 * 1000;
+
+        if (shouldEnrich && podcast.externalSource === 'listen_notes' && listenNotesClient.isConfigured()) {
+            try {
+                console.log(`🔄 Enriching podcast ${podcast.externalId} from Listen Notes...`);
+                const detail = await listenNotesClient.getPodcastDetail(podcast.externalId);
+
+                // Update with fresh data
+                await this.upsertListenNotesPodcast(detail, true);
+
+                // Return the updated podcast
+                const updated = await db.query.podcasts.findFirst({
+                    where: eq(podcasts.id, id),
+                });
+
+                if (updated) {
+                    return this.mapPodcast(updated);
+                }
+            } catch (error) {
+                console.error('Listen Notes enrichment error:', error);
+                // Continue with existing data
+            }
+        }
+
         return this.mapPodcast(podcast);
     }
 
+    /**
+     * Upsert a single Listen Notes podcast with null-safe rules
+     */
+    static async upsertListenNotesPodcast(data: ListenNotesPodcast, isEnrichment = false): Promise<void> {
+        const now = new Date();
+
+        // Build the set clause with null-safe updates
+        const setClause: Record<string, unknown> = {
+            lastSeenAt: now,
+            updatedAt: now,
+        };
+
+        // Only update if value is non-null and non-empty
+        if (data.title) setClause.title = data.title;
+        if (data.description) setClause.description = data.description;
+        if (data.publisher) setClause.publisher = data.publisher;
+        if (data.language) setClause.language = data.language;
+        if (data.country) setClause.country = data.country;
+        if (data.imageUrl) setClause.imageUrl = data.imageUrl;
+        if (data.genreIds && data.genreIds.length > 0) setClause.genreIds = data.genreIds;
+        if (data.listenScore !== null) setClause.listenScore = data.listenScore;
+        if (data.listenScoreGlobalRank) setClause.listenScoreGlobalRank = data.listenScoreGlobalRank;
+        if (data.explicitContent !== null) setClause.explicitContent = data.explicitContent;
+        if (data.audienceSizeEstimate !== null) setClause.audienceSizeEstimate = data.audienceSizeEstimate;
+
+        // Only update email/rss if non-null (don't overwrite existing with null)
+        if (data.contactEmail) setClause.contactEmail = data.contactEmail;
+        if (data.rssUrl) setClause.rssUrl = data.rssUrl;
+        if (data.websiteUrl) setClause.websiteUrl = data.websiteUrl;
+
+        // If this is an enrichment call, update lastEnrichedAt
+        if (isEnrichment) {
+            setClause.lastEnrichedAt = now;
+        }
+
+        // Increment data version
+        setClause.dataVersion = sql`COALESCE(${podcasts.dataVersion}, 0) + 1`;
+
+        await db
+            .insert(podcasts)
+            .values({
+                externalSource: 'listen_notes',
+                externalId: data.externalId,
+                title: data.title,
+                description: data.description,
+                publisher: data.publisher,
+                categories: data.categories || [],
+                language: data.language,
+                country: data.country,
+                hostName: data.hostName,
+                contactEmail: data.contactEmail,
+                rssUrl: data.rssUrl,
+                websiteUrl: data.websiteUrl,
+                imageUrl: data.imageUrl,
+                genreIds: data.genreIds,
+                listenScore: data.listenScore,
+                listenScoreGlobalRank: data.listenScoreGlobalRank,
+                explicitContent: data.explicitContent,
+                audienceSizeEstimate: data.audienceSizeEstimate,
+                firstSeenAt: now,
+                lastSeenAt: now,
+                lastEnrichedAt: isEnrichment ? now : null,
+            })
+            .onConflictDoUpdate({
+                target: [podcasts.externalSource, podcasts.externalId],
+                set: setClause,
+            });
+
+        // Store provenance record
+        const [insertedPodcast] = await db
+            .select({ id: podcasts.id })
+            .from(podcasts)
+            .where(and(
+                eq(podcasts.externalSource, 'listen_notes'),
+                eq(podcasts.externalId, data.externalId)
+            ))
+            .limit(1);
+
+        if (insertedPodcast) {
+            await db.insert(podcastSources).values({
+                podcastId: insertedPodcast.id,
+                source: 'listen_notes',
+                rawPayload: data.rawPayload,
+                fetchedAt: now,
+            });
+        }
+    }
+
+    /**
+     * Bulk upsert Listen Notes podcasts
+     */
+    static async upsertListenNotesPodcasts(data: ListenNotesPodcast[]): Promise<number> {
+        let count = 0;
+
+        for (const podcast of data) {
+            try {
+                await this.upsertListenNotesPodcast(podcast);
+                count++;
+            } catch (error) {
+                console.error(`Failed to upsert podcast ${podcast.externalId}:`, error);
+            }
+        }
+
+        return count;
+    }
+
+    /**
+     * Original upsert method for backward compatibility
+     */
     static async upsert(data: PodcastIngestionInput): Promise<Podcast> {
         const [result] = await db
             .insert(podcasts)
@@ -131,6 +377,9 @@ export class PodcastService {
         return this.mapPodcast(result);
     }
 
+    /**
+     * Bulk upsert for backward compatibility
+     */
     static async bulkUpsert(data: PodcastIngestionInput[]): Promise<number> {
         let count = 0;
 
@@ -176,6 +425,9 @@ export class PodcastService {
         return count;
     }
 
+    /**
+     * Map database podcast to API type
+     */
     private static mapPodcast(p: typeof podcasts.$inferSelect): Podcast {
         return {
             id: p.id,

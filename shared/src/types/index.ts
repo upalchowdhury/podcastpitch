@@ -77,6 +77,17 @@ export interface Podcast {
     website: string | null;
     audienceSizeEstimate: number | null;
     imageUrl: string | null;
+    // Listen Notes specific fields
+    publisher?: string | null;
+    country?: string | null;
+    genreIds?: number[];
+    listenScore?: number | null;
+    listenScoreGlobalRank?: string | null;
+    explicitContent?: boolean | null;
+    hasGuestInterviews?: boolean | null;
+    hasSponsors?: boolean | null;
+    lastEnrichedAt?: Date | null;
+    // Timestamps
     createdAt: Date;
     updatedAt: Date;
 }
@@ -97,6 +108,11 @@ export interface PodcastSearchResult {
     page: number;
     limit: number;
     hasMore: boolean;
+    sourceBreakdown?: {
+        local: number;
+        listenNotes: number;
+    };
+    nextOffset?: number;
 }
 
 // =============================================================================

@@ -90,6 +90,20 @@ export const podcasts = pgTable('podcasts', {
     audienceSizeEstimate: integer('audience_size_estimate'),
     imageUrl: varchar('image_url', { length: 500 }),
     searchVector: text('search_vector'), // For full-text search
+    // Listen Notes specific fields
+    publisher: varchar('publisher', { length: 300 }),
+    country: varchar('country', { length: 50 }),
+    genreIds: jsonb('genre_ids').$type<number[]>().default([]),
+    listenScore: integer('listen_score'),
+    listenScoreGlobalRank: varchar('listen_score_global_rank', { length: 50 }),
+    explicitContent: boolean('explicit_content'),
+    hasGuestInterviews: boolean('has_guest_interviews'),
+    hasSponsors: boolean('has_sponsors'),
+    firstSeenAt: timestamp('first_seen_at').notNull().defaultNow(),
+    lastSeenAt: timestamp('last_seen_at').notNull().defaultNow(),
+    lastEnrichedAt: timestamp('last_enriched_at'),
+    dataVersion: integer('data_version').notNull().default(1),
+    // Timestamps
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
@@ -98,6 +112,22 @@ export const podcasts = pgTable('podcasts', {
     languageIdx: index('podcasts_language_idx').on(table.language),
     feedStatusIdx: index('podcasts_feed_status_idx').on(table.feedStatus),
     contactEmailIdx: index('podcasts_contact_email_idx').on(table.contactEmail),
+    listenScoreIdx: index('podcasts_listen_score_idx').on(table.listenScore),
+}));
+
+// =============================================================================
+// PODCAST SOURCES (Provenance tracking)
+// =============================================================================
+
+export const podcastSources = pgTable('podcast_sources', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    podcastId: uuid('podcast_id').notNull().references(() => podcasts.id, { onDelete: 'cascade' }),
+    source: varchar('source', { length: 100 }).notNull(),
+    rawPayload: jsonb('raw_payload').$type<Record<string, unknown>>(),
+    fetchedAt: timestamp('fetched_at').notNull().defaultNow(),
+}, (table) => ({
+    podcastIdIdx: index('podcast_sources_podcast_id_idx').on(table.podcastId),
+    sourceIdx: index('podcast_sources_source_idx').on(table.source),
 }));
 
 // =============================================================================
