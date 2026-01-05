@@ -87,6 +87,9 @@ export interface Podcast {
     hasGuestInterviews?: boolean | null;
     hasSponsors?: boolean | null;
     lastEnrichedAt?: Date | null;
+    // Activity tracking
+    latestEpisodePubDate?: Date | null;
+    totalEpisodes?: number | null;
     // Timestamps
     createdAt: Date;
     updatedAt: Date;
@@ -98,6 +101,7 @@ export interface PodcastSearchParams {
     language?: string;
     minAudienceSize?: number;
     maxAudienceSize?: number;
+    activeOnly?: boolean;  // Filter to podcasts with episodes in last 6 months
     page?: number;
     limit?: number;
 }

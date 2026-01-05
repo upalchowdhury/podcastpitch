@@ -230,34 +230,54 @@ export class PitchService {
         podcast: typeof podcasts.$inferSelect,
         additionalContext?: string
     ): Promise<GeneratePitchResult> {
+        // Build expertise string with fallback
+        const expertiseStr = profile.expertiseTopics?.length > 0
+            ? profile.expertiseTopics.join(', ')
+            : 'various topics';
+
+        // Build credentials with fallback
+        const credentialsStr = profile.credentials?.trim()
+            ? profile.credentials
+            : profile.bio?.trim()
+                ? 'experienced professional'
+                : '';
+
         const prompt = `You are an expert at writing podcast guest pitch emails. Generate a personalized pitch email for the following:
 
 GUEST PROFILE:
 - Name: ${profile.name}
-- Bio: ${profile.bio}
-- Expertise: ${profile.expertiseTopics.join(', ')}
-- Target Audience: ${profile.targetAudience}
-- Credentials: ${profile.credentials}
+- Bio: ${profile.bio || 'A professional seeking podcast appearances'}
+- Expertise Areas: ${expertiseStr}
+- Target Audience: ${profile.targetAudience || 'General audience'}
+- Credentials/Achievements: ${credentialsStr || 'Industry professional'}
 
 PODCAST:
 - Title: ${podcast.title}
-- Host: ${podcast.hostName || 'Unknown'}
-- Description: ${podcast.description}
-- Categories: ${podcast.categories.join(', ')}
+- Host: ${podcast.hostName || 'the host'}
+- Description: ${podcast.description || 'A podcast in the ' + (podcast.categories?.[0] || 'general') + ' space'}
+- Categories/Topics: ${podcast.categories?.join(', ') || 'General'}
 
-${additionalContext ? `ADDITIONAL CONTEXT: ${additionalContext}` : ''}
+${additionalContext ? `ADDITIONAL CONTEXT FROM USER: ${additionalContext}` : ''}
 
-Generate a compelling, personalized pitch email. The email should:
-1. Show genuine familiarity with the podcast
-2. Clearly explain why the guest would be valuable
-3. Suggest specific topics they could discuss
-4. Be professional but warm in tone
-5. Be concise (under 300 words)
+CRITICAL INSTRUCTIONS:
+1. Generate a COMPLETE, READY-TO-SEND email. Do NOT include any placeholder text, bracketed suggestions, or template markers.
+2. NEVER use brackets like [mention something], [your company], [specific episode], or similar. Every word must be final.
+3. Reference the podcast's focus areas based on the categories and description provided - do NOT ask the guest to fill in details.
+4. Use the guest's actual bio, credentials, and expertise - do NOT create placeholders for them to fill.
+5. Suggest 2-3 SPECIFIC topic ideas based on the overlap between guest expertise and podcast categories.
+6. If you don't have specific information, make reasonable inferences or write general but complete statements.
+
+The email should:
+- Open with a genuine connection to the podcast's subject matter (based on categories/description)
+- Clearly explain why ${profile.name} would be a valuable guest using their actual credentials
+- Propose specific conversation topics that align with both parties
+- Include a clear call to action
+- Be professional, warm, and under 300 words
 
 Respond in JSON format:
 {
-  "subject": "Email subject line",
-  "body": "Full email body"
+  "subject": "Email subject line (specific and compelling, no placeholders)",
+  "body": "Full email body (complete and ready to send)"
 }`;
 
         try {

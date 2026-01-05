@@ -1,9 +1,10 @@
-import { eq, and, sql, desc, or, ilike } from 'drizzle-orm';
+import { eq, and, sql, desc, or, ilike, gte } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { podcasts, podcastSources } from '../db/schema.js';
 import { NotFoundError } from '../utils/errors.js';
 import { config } from '../config/index.js';
 import { listenNotesClient, type ListenNotesPodcast } from './listenNotes.client.js';
+import { expandSearchQuery, isLikelyAbbreviation } from '../utils/searchSynonyms.js';
 import type {
     Podcast,
     PodcastSearchParams,
@@ -45,6 +46,7 @@ export class PodcastService {
             language,
             minAudienceSize,
             maxAudienceSize,
+            activeOnly,
             page = 1,
             limit = 20
         } = params;
@@ -59,6 +61,7 @@ export class PodcastService {
             language,
             minAudienceSize,
             maxAudienceSize,
+            activeOnly,
             limit: Math.max(limit, localMinResults),
             offset,
         });
@@ -71,18 +74,31 @@ export class PodcastService {
             console.log(`📊 Local results (${localResults.podcasts.length}) < threshold (${localMinResults}), fetching from Listen Notes...`);
 
             try {
-                const lnResult = await listenNotesClient.search({
-                    query,
-                    offset: 0,
-                    language: language || 'English',
-                    safeMode: true,
-                });
+                // Expand search query if it's a short abbreviation like "AI"
+                const searchQueries = isLikelyAbbreviation(query)
+                    ? expandSearchQuery(query).slice(0, 3)  // Limit to 3 expansions to avoid too many API calls
+                    : [query];
 
-                // Step 3: Upsert Listen Notes results
-                if (lnResult.podcasts.length > 0) {
-                    await this.upsertListenNotesPodcasts(lnResult.podcasts);
-                    listenNotesCount = lnResult.podcasts.length;
-                    nextOffset = lnResult.nextOffset;
+                console.log(`🔍 Search queries: ${searchQueries.join(', ')}`);
+
+                // Search with each expanded query
+                for (const searchQuery of searchQueries) {
+                    const lnResult = await listenNotesClient.search({
+                        query: searchQuery,
+                        offset: 0,
+                        language: language || 'English',
+                        safeMode: true,
+                    });
+
+                    // Upsert Listen Notes results
+                    if (lnResult.podcasts.length > 0) {
+                        await this.upsertListenNotesPodcasts(lnResult.podcasts);
+                        listenNotesCount += lnResult.podcasts.length;
+                        nextOffset = lnResult.nextOffset;
+                    }
+
+                    // If we have enough results, stop querying
+                    if (listenNotesCount >= localMinResults) break;
                 }
 
                 console.log(`✅ Ingested ${listenNotesCount} podcasts from Listen Notes`);
@@ -122,35 +138,49 @@ export class PodcastService {
         language?: string;
         minAudienceSize?: number;
         maxAudienceSize?: number;
+        activeOnly?: boolean;
         limit: number;
         offset: number;
     }): Promise<PodcastSearchResult> {
-        const { query, categories, language, minAudienceSize, maxAudienceSize, limit, offset } = params;
+        const { query, categories, language, minAudienceSize, maxAudienceSize, activeOnly, limit, offset } = params;
         const conditions = [];
 
         // Improved text search: split query into words and match ANY word (OR logic)
         // This makes "mountain biking trails" find podcasts with "mountain" OR "biking" OR "trails"
         if (query) {
-            // Split query into words, filter out short words (< 3 chars)
-            const words = query
-                .toLowerCase()
-                .split(/\s+/)
-                .filter(word => word.length >= 3)
-                .slice(0, 5); // Limit to 5 words max for performance
+            // For short queries (1-3 chars), also try synonym expansion for local search
+            const expandedTerms = isLikelyAbbreviation(query)
+                ? [query, ...expandSearchQuery(query)]
+                : [query];
 
-            if (words.length > 0) {
-                // Create OR condition for each word across all searchable fields
-                const wordConditions = words.map(word =>
-                    or(
-                        ilike(podcasts.title, `%${word}%`),
-                        ilike(podcasts.description, `%${word}%`),
-                        ilike(podcasts.publisher, `%${word}%`),
-                        ilike(podcasts.hostName, `%${word}%`)
-                    )
-                );
+            const allWordConditions: ReturnType<typeof or>[] = [];
 
-                // Match if ANY word is found (OR between words)
-                conditions.push(or(...wordConditions));
+            for (const term of expandedTerms) {
+                // Split query into words, filter out short words (< 3 chars) unless the whole query is short
+                const words = term
+                    .toLowerCase()
+                    .split(/\s+/)
+                    .filter(word => word.length >= 2)  // Lowered to 2 to catch "AI"
+                    .slice(0, 5); // Limit to 5 words max for performance
+
+                if (words.length > 0) {
+                    // Create OR condition for each word across all searchable fields
+                    for (const word of words) {
+                        allWordConditions.push(
+                            or(
+                                ilike(podcasts.title, `%${word}%`),
+                                ilike(podcasts.description, `%${word}%`),
+                                ilike(podcasts.publisher, `%${word}%`),
+                                ilike(podcasts.hostName, `%${word}%`)
+                            )
+                        );
+                    }
+                }
+            }
+
+            // Match if ANY word/term is found (OR between all conditions)
+            if (allWordConditions.length > 0) {
+                conditions.push(or(...allWordConditions));
             }
         }
 
@@ -172,6 +202,15 @@ export class PodcastService {
         }
         if (maxAudienceSize !== undefined) {
             conditions.push(sql`${podcasts.audienceSizeEstimate} <= ${maxAudienceSize}`);
+        }
+
+        // Active podcasts only filter (episodes in last 6 months)
+        if (activeOnly) {
+            const sixMonthsAgo = new Date();
+            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+            conditions.push(
+                sql`${podcasts.latestEpisodePubDate} >= ${sixMonthsAgo}`
+            );
         }
 
         const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -276,6 +315,10 @@ export class PodcastService {
         if (data.rssUrl) setClause.rssUrl = data.rssUrl;
         if (data.websiteUrl) setClause.websiteUrl = data.websiteUrl;
 
+        // Activity tracking fields
+        if (data.latestEpisodePubDate) setClause.latestEpisodePubDate = data.latestEpisodePubDate;
+        if (data.totalEpisodes !== null) setClause.totalEpisodes = data.totalEpisodes;
+
         // If this is an enrichment call, update lastEnrichedAt
         if (isEnrichment) {
             setClause.lastEnrichedAt = now;
@@ -305,6 +348,8 @@ export class PodcastService {
                 listenScoreGlobalRank: data.listenScoreGlobalRank,
                 explicitContent: data.explicitContent,
                 audienceSizeEstimate: data.audienceSizeEstimate,
+                latestEpisodePubDate: data.latestEpisodePubDate,
+                totalEpisodes: data.totalEpisodes,
                 firstSeenAt: now,
                 lastSeenAt: now,
                 lastEnrichedAt: isEnrichment ? now : null,

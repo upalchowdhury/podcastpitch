@@ -92,6 +92,9 @@ export interface ListenNotesPodcast {
     hasGuestInterviews: boolean | null;
     hasSponsors: boolean | null;
     audienceSizeEstimate: number | null;
+    // Activity tracking
+    latestEpisodePubDate: Date | null;
+    totalEpisodes: number | null;
     // Raw payload for provenance
     rawPayload: Record<string, unknown>;
 }
@@ -265,6 +268,10 @@ export class ListenNotesClient {
             hasGuestInterviews: null, // Not available in search, only in detail
             hasSponsors: null,        // Not available in search, only in detail
             audienceSizeEstimate: audienceEstimate,
+            latestEpisodePubDate: result.latest_pub_date_ms
+                ? new Date(result.latest_pub_date_ms)
+                : null,
+            totalEpisodes: result.total_episodes || null,
             rawPayload: result as unknown as Record<string, unknown>,
         };
     }
@@ -299,6 +306,10 @@ export class ListenNotesClient {
             hasGuestInterviews: null, // Would need to infer from episodes
             hasSponsors: null,
             audienceSizeEstimate: audienceEstimate,
+            latestEpisodePubDate: detail.next_episode_pub_date
+                ? new Date(detail.next_episode_pub_date)
+                : null,
+            totalEpisodes: detail.total_episodes || null,
             rawPayload: detail as unknown as Record<string, unknown>,
         };
     }

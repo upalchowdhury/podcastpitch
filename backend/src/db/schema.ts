@@ -99,11 +99,14 @@ export const podcasts = pgTable('podcasts', {
     explicitContent: boolean('explicit_content'),
     hasGuestInterviews: boolean('has_guest_interviews'),
     hasSponsors: boolean('has_sponsors'),
+    // Activity tracking fields
+    latestEpisodePubDate: timestamp('latest_episode_pub_date'),
+    totalEpisodes: integer('total_episodes'),
+    // Timestamps
     firstSeenAt: timestamp('first_seen_at').notNull().defaultNow(),
     lastSeenAt: timestamp('last_seen_at').notNull().defaultNow(),
     lastEnrichedAt: timestamp('last_enriched_at'),
     dataVersion: integer('data_version').notNull().default(1),
-    // Timestamps
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
@@ -113,6 +116,7 @@ export const podcasts = pgTable('podcasts', {
     feedStatusIdx: index('podcasts_feed_status_idx').on(table.feedStatus),
     contactEmailIdx: index('podcasts_contact_email_idx').on(table.contactEmail),
     listenScoreIdx: index('podcasts_listen_score_idx').on(table.listenScore),
+    latestEpisodeIdx: index('podcasts_latest_episode_pub_date_idx').on(table.latestEpisodePubDate),
 }));
 
 // =============================================================================
