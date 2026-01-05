@@ -261,23 +261,25 @@ ${additionalContext ? `ADDITIONAL CONTEXT FROM USER: ${additionalContext}` : ''}
 
 CRITICAL INSTRUCTIONS:
 1. Generate a COMPLETE, READY-TO-SEND email. Do NOT include any placeholder text, bracketed suggestions, or template markers.
-2. NEVER use brackets like [mention something], [your company], [specific episode], or similar. Every word must be final.
-3. Reference the podcast's focus areas based on the categories and description provided - do NOT ask the guest to fill in details.
-4. Use the guest's actual bio, credentials, and expertise - do NOT create placeholders for them to fill.
-5. Suggest 2-3 SPECIFIC topic ideas based on the overlap between guest expertise and podcast categories.
-6. If you don't have specific information, make reasonable inferences or write general but complete statements.
+2. NEVER use brackets like [mention something], [your company], [specific episode], [your name], or similar. Every word must be final.
+3. SIGN THE EMAIL WITH "${profile.name}" - NOT with "[Your Name]" or any other placeholder.
+4. Reference the podcast's focus areas based on the categories and description provided - do NOT ask the guest to fill in details.
+5. Use the guest's actual bio, credentials, and expertise - do NOT create placeholders for them to fill.
+6. Suggest 2-3 SPECIFIC topic ideas based on the overlap between guest expertise and podcast categories.
+7. If you don't have specific information, make reasonable inferences or write general but complete statements.
 
 The email should:
 - Open with a genuine connection to the podcast's subject matter (based on categories/description)
 - Clearly explain why ${profile.name} would be a valuable guest using their actual credentials
 - Propose specific conversation topics that align with both parties
 - Include a clear call to action
+- End with "Best regards," or "Sincerely," followed by "${profile.name}" (the actual name, NOT a placeholder)
 - Be professional, warm, and under 300 words
 
 Respond in JSON format:
 {
   "subject": "Email subject line (specific and compelling, no placeholders)",
-  "body": "Full email body (complete and ready to send)"
+  "body": "Full email body (complete and ready to send, signed with ${profile.name})"
 }`;
 
         try {

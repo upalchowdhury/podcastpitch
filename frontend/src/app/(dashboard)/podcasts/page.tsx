@@ -52,21 +52,36 @@ function PodcastSearchContent() {
         fetchLists();
     }, []);
 
-    // Restore search from URL on mount
+    // Create a stable key from search params to detect changes
+    const searchParamsKey = searchParams.toString();
+
+    // Restore search from URL when params exist (works on mount and navigation back)
     useEffect(() => {
         const q = searchParams.get('q');
         const cat = searchParams.get('category');
-        if (q || cat) {
+        const minAud = searchParams.get('minAudience');
+        const maxAud = searchParams.get('maxAudience');
+        const active = searchParams.get('activeOnly') === 'true';
+
+        // Update local state from URL params
+        setQuery(q || '');
+        setCategory(cat || '');
+        setMinAudience(minAud || '');
+        setMaxAudience(maxAud || '');
+        setActiveOnly(active);
+
+        // If there are search params and we don't have results, run the search
+        if ((q || cat) && podcasts.length === 0) {
             executeSearch({
                 query: q || '',
                 category: cat || '',
-                minAudience: searchParams.get('minAudience') || '',
-                maxAudience: searchParams.get('maxAudience') || '',
-                activeOnly: searchParams.get('activeOnly') === 'true',
+                minAudience: minAud || '',
+                maxAudience: maxAud || '',
+                activeOnly: active,
                 page: 1,
             });
         }
-    }, []); // Only run on mount
+    }, [searchParamsKey]); // Re-run when URL params change
 
     const fetchLists = async () => {
         try {

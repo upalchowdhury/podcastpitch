@@ -69,14 +69,20 @@ export class PodcastService {
         let listenNotesCount = 0;
         let nextOffset: number | undefined;
 
-        // Step 2: If local results insufficient, fetch from Listen Notes
-        if (localResults.podcasts.length < localMinResults && query && listenNotesClient.isConfigured()) {
-            console.log(`📊 Local results (${localResults.podcasts.length}) < threshold (${localMinResults}), fetching from Listen Notes...`);
+        // Step 2: Determine if we should fetch from Listen Notes
+        // - Always fetch on page 1 if there's a query (for fresh, relevant results)
+        // - Fetch on later pages only if we don't have enough cached results
+        const shouldFetchFromListenNotes = query &&
+            listenNotesClient.isConfigured() &&
+            (page === 1 || localResults.podcasts.length < limit);
+
+        if (shouldFetchFromListenNotes) {
+            console.log(`📊 Fetching from Listen Notes (page ${page}, local: ${localResults.podcasts.length})...`);
 
             try {
                 // Expand search query if it's a short abbreviation like "AI"
                 const searchQueries = isLikelyAbbreviation(query)
-                    ? expandSearchQuery(query).slice(0, 3)  // Limit to 3 expansions to avoid too many API calls
+                    ? expandSearchQuery(query).slice(0, 2)  // Limit to 2 expansions
                     : [query];
 
                 console.log(`🔍 Search queries: ${searchQueries.join(', ')}`);
@@ -85,12 +91,12 @@ export class PodcastService {
                 for (const searchQuery of searchQueries) {
                     const lnResult = await listenNotesClient.search({
                         query: searchQuery,
-                        offset: 0,
+                        offset: page === 1 ? 0 : offset,
                         language: language || 'English',
                         safeMode: true,
                     });
 
-                    // Upsert Listen Notes results
+                    // Upsert Listen Notes results into local cache
                     if (lnResult.podcasts.length > 0) {
                         await this.upsertListenNotesPodcasts(lnResult.podcasts);
                         listenNotesCount += lnResult.podcasts.length;
@@ -98,7 +104,7 @@ export class PodcastService {
                     }
 
                     // If we have enough results, stop querying
-                    if (listenNotesCount >= localMinResults) break;
+                    if (listenNotesCount >= limit) break;
                 }
 
                 console.log(`✅ Ingested ${listenNotesCount} podcasts from Listen Notes`);
@@ -108,13 +114,15 @@ export class PodcastService {
             }
         }
 
-        // Step 4: Re-query local DB to get merged results
+        // Step 3: Re-query local DB to get merged/fresh results
+        // This ensures Listen Notes results are included
         const mergedResults = await this.searchLocal({
             query,
             categories,
             language,
             minAudienceSize,
             maxAudienceSize,
+            activeOnly,
             limit,
             offset,
         });
@@ -145,10 +153,11 @@ export class PodcastService {
         const { query, categories, language, minAudienceSize, maxAudienceSize, activeOnly, limit, offset } = params;
         const conditions = [];
 
-        // Improved text search: split query into words and match ANY word (OR logic)
-        // This makes "mountain biking trails" find podcasts with "mountain" OR "biking" OR "trails"
+        // Smart text search with flexible matching
+        // Strategy: Use substring matching (ilike) for flexibility, but let Listen Notes
+        // handle the heavy lifting for relevance. Local search is a fallback/cache.
         if (query) {
-            // For short queries (1-3 chars), also try synonym expansion for local search
+            // Expand abbreviations like "ai" -> ["ai", "artificial intelligence", ...]
             const expandedTerms = isLikelyAbbreviation(query)
                 ? [query, ...expandSearchQuery(query)]
                 : [query];
@@ -156,15 +165,16 @@ export class PodcastService {
             const allWordConditions: ReturnType<typeof or>[] = [];
 
             for (const term of expandedTerms) {
-                // Split query into words, filter out short words (< 3 chars) unless the whole query is short
+                // Split query into words
                 const words = term
                     .toLowerCase()
                     .split(/\s+/)
-                    .filter(word => word.length >= 2)  // Lowered to 2 to catch "AI"
-                    .slice(0, 5); // Limit to 5 words max for performance
+                    .filter(word => word.length >= 2)
+                    .slice(0, 5);
 
                 if (words.length > 0) {
-                    // Create OR condition for each word across all searchable fields
+                    // Create condition for each word - use flexible substring matching
+                    // Relevance ranking is handled by ORDER BY listen_score
                     for (const word of words) {
                         allWordConditions.push(
                             or(
@@ -179,6 +189,7 @@ export class PodcastService {
             }
 
             // Match if ANY word/term is found (OR between all conditions)
+            // This gives maximum coverage - relevant podcasts will rank higher by listen_score
             if (allWordConditions.length > 0) {
                 conditions.push(or(...allWordConditions));
             }
