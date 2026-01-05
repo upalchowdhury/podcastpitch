@@ -9,8 +9,10 @@ interface AuthState {
     token: string | null;
     profile: UserProfile | null;
     isLoading: boolean;
+    hasEmailAccount: boolean | null;  // null = not checked yet
     setAuth: (user: User, token: string) => void;
     setProfile: (profile: UserProfile) => void;
+    setHasEmailAccount: (hasEmail: boolean) => void;
     logout: () => void;
     setLoading: (loading: boolean) => void;
 }
@@ -22,9 +24,11 @@ export const useAuthStore = create<AuthState>()(
             token: null,
             profile: null,
             isLoading: true,
+            hasEmailAccount: null,
             setAuth: (user, token) => set({ user, token, isLoading: false }),
             setProfile: (profile) => set({ profile }),
-            logout: () => set({ user: null, token: null, profile: null, isLoading: false }),
+            setHasEmailAccount: (hasEmailAccount) => set({ hasEmailAccount }),
+            logout: () => set({ user: null, token: null, profile: null, hasEmailAccount: null, isLoading: false }),
             setLoading: (isLoading) => set({ isLoading }),
         }),
         {
@@ -33,6 +37,7 @@ export const useAuthStore = create<AuthState>()(
                 user: state.user,
                 token: state.token,
                 profile: state.profile,
+                hasEmailAccount: state.hasEmailAccount,
             }),
         }
     )

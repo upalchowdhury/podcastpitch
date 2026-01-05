@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { emailAccountApi } from '@/lib/api';
-import { Plus, Trash2, Loader2, Mail, CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
+import { useAuthStore } from '@/lib/store';
+import { Plus, Trash2, Loader2, Mail, CheckCircle, AlertCircle, AlertTriangle, PlayCircle, ExternalLink } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
 interface EmailAccount {
@@ -30,6 +31,7 @@ export default function EmailSettingsPage() {
     const [loading, setLoading] = useState(true);
     const [showAdd, setShowAdd] = useState(false);
     const [adding, setAdding] = useState(false);
+    const { setHasEmailAccount } = useAuthStore();
 
     const {
         register,
@@ -51,6 +53,7 @@ export default function EmailSettingsPage() {
         try {
             const data = await emailAccountApi.getAll();
             setAccounts(data);
+            setHasEmailAccount(data.length > 0);
         } catch (error) {
             console.error('Failed to fetch accounts:', error);
         } finally {
@@ -73,7 +76,9 @@ export default function EmailSettingsPage() {
                     password: data.password,
                 },
             });
-            setAccounts([account, ...accounts]);
+            const newAccounts = [account, ...accounts];
+            setAccounts(newAccounts);
+            setHasEmailAccount(true);
             reset();
             setShowAdd(false);
         } catch (error) {
@@ -88,7 +93,9 @@ export default function EmailSettingsPage() {
 
         try {
             await emailAccountApi.delete(id);
-            setAccounts(accounts.filter((a) => a.id !== id));
+            const newAccounts = accounts.filter((a) => a.id !== id);
+            setAccounts(newAccounts);
+            setHasEmailAccount(newAccounts.length > 0);
         } catch (error) {
             console.error('Failed to delete account:', error);
         }
@@ -116,7 +123,7 @@ export default function EmailSettingsPage() {
     }
 
     return (
-        <div className="max-w-2xl">
+        <div className="max-w-3xl">
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Email Accounts</h1>
@@ -128,6 +135,71 @@ export default function EmailSettingsPage() {
                     <Plus className="h-4 w-4 mr-2" />
                     Add Account
                 </button>
+            </div>
+
+            {/* Setup Required Banner - Show only if no accounts */}
+            {accounts.length === 0 && !showAdd && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-6">
+                    <div className="flex items-start gap-4">
+                        <div className="p-2 bg-amber-100 rounded-lg">
+                            <AlertTriangle className="h-6 w-6 text-amber-600" />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-amber-800 mb-1">
+                                Email Setup Required
+                            </h3>
+                            <p className="text-amber-700 text-sm mb-4">
+                                You need to configure an SMTP email account before you can send pitches.
+                                Watch the tutorial below to learn how to set up SMTP with your email provider.
+                            </p>
+                            <button
+                                onClick={() => setShowAdd(true)}
+                                className="btn-primary bg-amber-600 hover:bg-amber-700"
+                            >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Set Up Email Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Video Tutorial Section */}
+            <div className="card mb-6">
+                <div className="flex items-start gap-4">
+                    <div className="p-2 bg-red-100 rounded-lg">
+                        <PlayCircle className="h-6 w-6 text-red-600" />
+                    </div>
+                    <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 mb-1">
+                            How to Set Up SMTP Email
+                        </h3>
+                        <p className="text-gray-500 text-sm mb-4">
+                            Watch this quick tutorial to learn how to configure your SMTP settings for sending emails.
+                        </p>
+
+                        {/* Embedded YouTube Video */}
+                        <div className="aspect-video w-full max-w-2xl rounded-lg overflow-hidden bg-gray-100 mb-3">
+                            <iframe
+                                src="https://www.youtube.com/embed/ZfEK3WP73eY"
+                                title="How to Set Up SMTP Email"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowFullScreen
+                                className="w-full h-full"
+                            />
+                        </div>
+
+                        <a
+                            href="https://www.youtube.com/watch?v=ZfEK3WP73eY"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700"
+                        >
+                            <ExternalLink className="h-4 w-4" />
+                            Open in YouTube
+                        </a>
+                    </div>
+                </div>
             </div>
 
             {/* Add Account Form */}
@@ -217,15 +289,16 @@ export default function EmailSettingsPage() {
             )}
 
             {/* Accounts List */}
-            {accounts.length === 0 ? (
+            {accounts.length === 0 && !showAdd ? (
                 <div className="card text-center py-12">
                     <Mail className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-500">
                         No email accounts configured. Add one to start sending pitches.
                     </p>
                 </div>
-            ) : (
+            ) : accounts.length > 0 ? (
                 <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Your Email Accounts</h3>
                     {accounts.map((account) => (
                         <div key={account.id} className="card">
                             <div className="flex items-center justify-between">
@@ -256,7 +329,7 @@ export default function EmailSettingsPage() {
                         </div>
                     ))}
                 </div>
-            )}
+            ) : null}
         </div>
     );
 }

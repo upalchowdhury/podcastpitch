@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
+import { emailAccountApi } from '@/lib/api';
 import { clsx } from 'clsx';
 import {
     Mic,
@@ -15,6 +17,7 @@ import {
     Send,
     LogOut,
     User,
+    AlertCircle,
 } from 'lucide-react';
 
 const navigation = [
@@ -26,14 +29,37 @@ const navigation = [
     { name: 'Responses', href: '/responses', icon: MessageSquare },
 ];
 
-const secondaryNavigation = [
-    { name: 'Email Accounts', href: '/settings/email', icon: Mail },
-    { name: 'Profile', href: '/settings/profile', icon: User },
-];
-
 export function Sidebar() {
     const pathname = usePathname();
-    const { user, profile, logout } = useAuthStore();
+    const { user, profile, hasEmailAccount, setHasEmailAccount, logout } = useAuthStore();
+
+    // Check if user has email accounts configured
+    useEffect(() => {
+        const checkEmailAccounts = async () => {
+            if (hasEmailAccount === null && user) {
+                try {
+                    const accounts = await emailAccountApi.getAll();
+                    setHasEmailAccount(accounts.length > 0);
+                } catch (error) {
+                    console.error('Failed to check email accounts:', error);
+                    // Don't set to false on error, let user discover naturally
+                }
+            }
+        };
+
+        checkEmailAccounts();
+    }, [user, hasEmailAccount, setHasEmailAccount]);
+
+    // Secondary navigation with dynamic warning indicator
+    const secondaryNavigation = [
+        {
+            name: 'Email Accounts',
+            href: '/settings/email',
+            icon: Mail,
+            showWarning: hasEmailAccount === false,
+        },
+        { name: 'Profile', href: '/settings/profile', icon: User },
+    ];
 
     return (
         <div className="flex h-full w-64 flex-col bg-gray-900">
@@ -79,14 +105,28 @@ export function Sidebar() {
                                     <Link
                                         href={item.href}
                                         className={clsx(
-                                            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                                            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors relative',
                                             isActive
                                                 ? 'bg-gray-800 text-white'
                                                 : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                                         )}
                                     >
-                                        <item.icon className="h-5 w-5" />
-                                        {item.name}
+                                        <div className="relative">
+                                            <item.icon className="h-5 w-5" />
+                                            {'showWarning' in item && item.showWarning && (
+                                                <span
+                                                    className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center"
+                                                    title="Email setup required"
+                                                >
+                                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+                                                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500"></span>
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span className="flex-1">{item.name}</span>
+                                        {'showWarning' in item && item.showWarning && (
+                                            <AlertCircle className="h-4 w-4 text-red-500" />
+                                        )}
                                     </Link>
                                 </li>
                             );
