@@ -153,9 +153,9 @@ export class PodcastService {
         const { query, categories, language, minAudienceSize, maxAudienceSize, activeOnly, limit, offset } = params;
         const conditions = [];
 
-        // Smart text search with flexible matching
-        // Strategy: Use substring matching (ilike) for flexibility, but let Listen Notes
-        // handle the heavy lifting for relevance. Local search is a fallback/cache.
+        // Smart text search with word-boundary matching for short terms
+        // Short words (2-3 chars) use regex word boundaries to avoid matching substrings
+        // e.g., "ai" shouldn't match "trail", "train", etc.
         if (query) {
             // Expand abbreviations like "ai" -> ["ai", "artificial intelligence", ...]
             const expandedTerms = isLikelyAbbreviation(query)
@@ -173,23 +173,37 @@ export class PodcastService {
                     .slice(0, 5);
 
                 if (words.length > 0) {
-                    // Create condition for each word - use flexible substring matching
-                    // Relevance ranking is handled by ORDER BY listen_score
                     for (const word of words) {
-                        allWordConditions.push(
-                            or(
-                                ilike(podcasts.title, `%${word}%`),
-                                ilike(podcasts.description, `%${word}%`),
-                                ilike(podcasts.publisher, `%${word}%`),
-                                ilike(podcasts.hostName, `%${word}%`)
-                            )
-                        );
+                        // For short words (2-3 chars), use word-boundary matching
+                        // to avoid false positives like "ai" in "trail" or "brain"
+                        if (word.length <= 3) {
+                            // PostgreSQL regex with \y word boundary
+                            // Matches "ai" as a word, not as part of "trail"
+                            const wordPattern = `\\y${word}\\y`;
+                            allWordConditions.push(
+                                or(
+                                    sql`${podcasts.title} ~* ${wordPattern}`,
+                                    sql`${podcasts.description} ~* ${wordPattern}`,
+                                    sql`${podcasts.publisher} ~* ${wordPattern}`,
+                                    sql`${podcasts.hostName} ~* ${wordPattern}`
+                                )
+                            );
+                        } else {
+                            // For longer words (4+ chars), substring matching is fine
+                            allWordConditions.push(
+                                or(
+                                    ilike(podcasts.title, `%${word}%`),
+                                    ilike(podcasts.description, `%${word}%`),
+                                    ilike(podcasts.publisher, `%${word}%`),
+                                    ilike(podcasts.hostName, `%${word}%`)
+                                )
+                            );
+                        }
                     }
                 }
             }
 
             // Match if ANY word/term is found (OR between all conditions)
-            // This gives maximum coverage - relevant podcasts will rank higher by listen_score
             if (allWordConditions.length > 0) {
                 conditions.push(or(...allWordConditions));
             }
