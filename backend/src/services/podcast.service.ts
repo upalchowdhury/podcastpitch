@@ -153,59 +153,43 @@ export class PodcastService {
         const { query, categories, language, minAudienceSize, maxAudienceSize, activeOnly, limit, offset } = params;
         const conditions = [];
 
-        // Smart text search with word-boundary matching for short terms
-        // Short words (2-3 chars) use regex word boundaries to avoid matching substrings
-        // e.g., "ai" shouldn't match "trail", "train", etc.
+        // Robust text search using regex word-boundary matching
+        // This prevents "ai" from matching "trail", "train", etc.
         if (query) {
             // Expand abbreviations like "ai" -> ["ai", "artificial intelligence", ...]
             const expandedTerms = isLikelyAbbreviation(query)
                 ? [query, ...expandSearchQuery(query)]
                 : [query];
 
-            const allWordConditions: ReturnType<typeof or>[] = [];
+            // Build a combined search condition
+            const searchConditions: ReturnType<typeof or>[] = [];
 
             for (const term of expandedTerms) {
-                // Split query into words
                 const words = term
                     .toLowerCase()
                     .split(/\s+/)
                     .filter(word => word.length >= 2)
+                    .map(word => word.replace(/[^a-z0-9]/g, '')) // Remove special chars
+                    .filter(word => word.length >= 2)
                     .slice(0, 5);
 
                 if (words.length > 0) {
-                    for (const word of words) {
-                        // For short words (2-3 chars), use word-boundary matching
-                        // to avoid false positives like "ai" in "trail" or "brain"
-                        if (word.length <= 3) {
-                            // PostgreSQL regex with \y word boundary
-                            // Matches "ai" as a word, not as part of "trail"
-                            const wordPattern = `\\y${word}\\y`;
-                            allWordConditions.push(
-                                or(
-                                    sql`${podcasts.title} ~* ${wordPattern}`,
-                                    sql`${podcasts.description} ~* ${wordPattern}`,
-                                    sql`${podcasts.publisher} ~* ${wordPattern}`,
-                                    sql`${podcasts.hostName} ~* ${wordPattern}`
-                                )
-                            );
-                        } else {
-                            // For longer words (4+ chars), substring matching is fine
-                            allWordConditions.push(
-                                or(
-                                    ilike(podcasts.title, `%${word}%`),
-                                    ilike(podcasts.description, `%${word}%`),
-                                    ilike(podcasts.publisher, `%${word}%`),
-                                    ilike(podcasts.hostName, `%${word}%`)
-                                )
-                            );
-                        }
-                    }
+                    // For each word, create regex conditions for word-boundary matching
+                    // Pattern: (^|[^a-z])word([^a-z]|$) - matches word at start/end or surrounded by non-letters
+                    const wordConditions = words.flatMap(w => {
+                        const pattern = `(^|[^a-z])${w}([^a-z]|$)`;
+                        return [
+                            sql`${podcasts.title} ~* ${pattern}`,
+                            sql`${podcasts.description} ~* ${pattern}`,
+                        ];
+                    });
+
+                    searchConditions.push(or(...wordConditions));
                 }
             }
 
-            // Match if ANY word/term is found (OR between all conditions)
-            if (allWordConditions.length > 0) {
-                conditions.push(or(...allWordConditions));
+            if (searchConditions.length > 0) {
+                conditions.push(or(...searchConditions));
             }
         }
 
