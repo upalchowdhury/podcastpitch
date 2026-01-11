@@ -91,7 +91,7 @@ export const podcasts = pgTable('podcasts', {
     // Original fields
     audienceSizeEstimate: integer('audience_size_estimate'),
     imageUrl: varchar('image_url', { length: 500 }),
-    searchVector: text('search_vector'), // For full-text search
+    // Note: search_tsv is a computed column, not defined in Drizzle schema
     // Listen Notes specific fields
     publisher: varchar('publisher', { length: 300 }),
     country: varchar('country', { length: 50 }),
