@@ -1,10 +1,19 @@
-import { eq, and, sql, desc, or, ilike, gte } from 'drizzle-orm';
+import { eq, and, sql, desc, or, ilike, gte, inArray } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { podcasts, podcastSources } from '../db/schema.js';
+import { podcasts, podcastSources, podcastTopics, topics } from '../db/schema.js';
 import { NotFoundError } from '../utils/errors.js';
 import { config } from '../config/index.js';
 import { listenNotesClient, type ListenNotesPodcast } from './listenNotes.client.js';
 import { expandSearchQuery, isLikelyAbbreviation } from '../utils/searchSynonyms.js';
+import {
+    resolveTopics,
+    detectQueryIntent,
+    normalizeQuery,
+    searchPodcastsFTS,
+    searchPodcastsTrigramName,
+    getTopicsForPodcast,
+    type ResolvedTopic,
+} from './topicSearch.service.js';
 import type {
     Podcast,
     PodcastSearchParams,
@@ -16,12 +25,39 @@ import type {
 // EXTENDED TYPES FOR HYBRID SEARCH
 // =============================================================================
 
+export interface MatchEvidence {
+    type: 'topic' | 'fts' | 'trigram_name' | 'fallback';
+    matchedTopics?: { slug: string; displayName: string; weight: number }[];
+    ftsRank?: number;
+    trigramSimilarity?: number;
+    trigramField?: 'title' | 'host_name' | 'publisher';
+}
+
+export interface EnhancedPodcast extends Podcast {
+    score: number;
+    matchEvidence: MatchEvidence;
+}
+
 export interface HybridSearchResult extends PodcastSearchResult {
     sourceBreakdown: {
         local: number;
         listenNotes: number;
     };
     nextOffset?: number;
+}
+
+export interface EnhancedSearchResult {
+    podcasts: EnhancedPodcast[];
+    total: number;
+    page: number;
+    limit: number;
+    hasMore: boolean;
+    resolvedTopics: ResolvedTopic[];
+    queryIntent: { type: string; confidence: number };
+    sourceBreakdown: {
+        local: number;
+        listenNotes: number;
+    };
 }
 
 // =============================================================================
@@ -249,6 +285,278 @@ export class PodcastService {
             page: Math.floor(offset / limit) + 1,
             limit,
             hasMore: offset + results.length < count,
+        };
+    }
+
+    /**
+     * Enhanced search with topics, FTS, and trigram matching
+     * This is the new multi-signal search algorithm
+     */
+    static async searchEnhanced(params: PodcastSearchParams): Promise<EnhancedSearchResult> {
+        const {
+            query = '',
+            categories,
+            language,
+            minAudienceSize,
+            maxAudienceSize,
+            activeOnly,
+            page = 1,
+            limit = 20
+        } = params;
+
+        const offset = (page - 1) * limit;
+        const normalizedQuery = normalizeQuery(query);
+        const queryIntent = detectQueryIntent(query);
+
+        console.log(`🔍 Enhanced search: "${query}" (intent: ${queryIntent.type}, confidence: ${queryIntent.confidence})`);
+
+        // Step 1: Resolve topics from query
+        const resolvedTopics = await resolveTopics(normalizedQuery);
+        console.log(`  📌 Resolved ${resolvedTopics.length} topics: ${resolvedTopics.map(t => t.displayName).join(', ')}`);
+
+        // Step 2: Build candidate set from multiple sources
+        const candidateMap = new Map<string, {
+            id: string;
+            listenScore: number | null;
+            latestEpisodePubDate: Date | null;
+            topicWeight: number;
+            topicMatches: { slug: string; displayName: string; weight: number }[];
+            ftsRank: number;
+            trigramSimilarity: number;
+            trigramField: 'title' | 'host_name' | 'publisher' | null;
+        }>();
+
+        // Source 1: Topic-based candidates
+        if (resolvedTopics.length > 0) {
+            const topicIds = resolvedTopics.map(t => t.id);
+            const topicPodcasts = await db
+                .select({
+                    podcastId: podcastTopics.podcastId,
+                    topicId: podcastTopics.topicId,
+                    topicSlug: topics.slug,
+                    topicDisplayName: topics.displayName,
+                    weight: podcastTopics.weight,
+                    listenScore: podcasts.listenScore,
+                    latestEpisodePubDate: podcasts.latestEpisodePubDate,
+                })
+                .from(podcastTopics)
+                .innerJoin(topics, eq(podcastTopics.topicId, topics.id))
+                .innerJoin(podcasts, eq(podcastTopics.podcastId, podcasts.id))
+                .where(inArray(podcastTopics.topicId, topicIds))
+                .limit(200);
+
+            for (const row of topicPodcasts) {
+                const existing = candidateMap.get(row.podcastId);
+                if (existing) {
+                    existing.topicWeight = Math.max(existing.topicWeight, row.weight);
+                    existing.topicMatches.push({
+                        slug: row.topicSlug,
+                        displayName: row.topicDisplayName,
+                        weight: row.weight,
+                    });
+                } else {
+                    candidateMap.set(row.podcastId, {
+                        id: row.podcastId,
+                        listenScore: row.listenScore,
+                        latestEpisodePubDate: row.latestEpisodePubDate,
+                        topicWeight: row.weight,
+                        topicMatches: [{
+                            slug: row.topicSlug,
+                            displayName: row.topicDisplayName,
+                            weight: row.weight,
+                        }],
+                        ftsRank: 0,
+                        trigramSimilarity: 0,
+                        trigramField: null,
+                    });
+                }
+            }
+            console.log(`  📚 Topic candidates: ${candidateMap.size}`);
+        }
+
+        // Source 2: FTS candidates (if query has meaningful words)
+        if (normalizedQuery.length >= 2) {
+            try {
+                const ftsResults = await searchPodcastsFTS(normalizedQuery, { limit: 100 });
+                for (const result of ftsResults) {
+                    const existing = candidateMap.get(result.id);
+                    if (existing) {
+                        existing.ftsRank = result.rank;
+                    } else {
+                        // Need to fetch podcast details
+                        const [podcast] = await db
+                            .select({
+                                listenScore: podcasts.listenScore,
+                                latestEpisodePubDate: podcasts.latestEpisodePubDate,
+                            })
+                            .from(podcasts)
+                            .where(eq(podcasts.id, result.id))
+                            .limit(1);
+
+                        if (podcast) {
+                            candidateMap.set(result.id, {
+                                id: result.id,
+                                listenScore: podcast.listenScore,
+                                latestEpisodePubDate: podcast.latestEpisodePubDate,
+                                topicWeight: 0,
+                                topicMatches: [],
+                                ftsRank: result.rank,
+                                trigramSimilarity: 0,
+                                trigramField: null,
+                            });
+                        }
+                    }
+                }
+                console.log(`  📝 FTS candidates: ${ftsResults.length}`);
+            } catch (error) {
+                console.error('FTS search error:', error);
+            }
+        }
+
+        // Source 3: Trigram candidates (for name searches)
+        if (queryIntent.type === 'name' || queryIntent.type === 'mixed') {
+            try {
+                const trigramResults = await searchPodcastsTrigramName(normalizedQuery, { limit: 50 });
+                for (const result of trigramResults) {
+                    const existing = candidateMap.get(result.id);
+                    if (existing) {
+                        if (result.similarity > existing.trigramSimilarity) {
+                            existing.trigramSimilarity = result.similarity;
+                            existing.trigramField = result.matchField;
+                        }
+                    } else {
+                        const [podcast] = await db
+                            .select({
+                                listenScore: podcasts.listenScore,
+                                latestEpisodePubDate: podcasts.latestEpisodePubDate,
+                            })
+                            .from(podcasts)
+                            .where(eq(podcasts.id, result.id))
+                            .limit(1);
+
+                        if (podcast) {
+                            candidateMap.set(result.id, {
+                                id: result.id,
+                                listenScore: podcast.listenScore,
+                                latestEpisodePubDate: podcast.latestEpisodePubDate,
+                                topicWeight: 0,
+                                topicMatches: [],
+                                ftsRank: 0,
+                                trigramSimilarity: result.similarity,
+                                trigramField: result.matchField,
+                            });
+                        }
+                    }
+                }
+                console.log(`  👤 Trigram candidates: ${trigramResults.length}`);
+            } catch (error) {
+                console.error('Trigram search error:', error);
+            }
+        }
+
+        // Step 3: Score and rank candidates
+        const candidates = Array.from(candidateMap.values());
+        const now = Date.now();
+        const sixMonthsAgo = now - 180 * 24 * 60 * 60 * 1000;
+
+        const scoredCandidates = candidates.map(c => {
+            // Base score components (all normalized 0-1)
+            const topicScore = c.topicWeight; // Already 0-1
+            const ftsScore = Math.min(c.ftsRank * 10, 1); // Normalize FTS rank
+            const trigramScore = c.trigramSimilarity; // Already 0-1
+
+            // Listen score normalization (0-100 → 0-1)
+            const listenScoreNormalized = (c.listenScore || 0) / 100;
+
+            // Recency boost (1.0 for recent, decays for older)
+            let recencyBoost = 0.5; // Default for no date
+            if (c.latestEpisodePubDate) {
+                const ageMs = now - c.latestEpisodePubDate.getTime();
+                if (ageMs < sixMonthsAgo) {
+                    recencyBoost = 1.0; // Very recent
+                } else {
+                    recencyBoost = Math.max(0.2, 1.0 - (ageMs / (365 * 24 * 60 * 60 * 1000)));
+                }
+            }
+
+            // Weighted combination based on query intent
+            let score: number;
+            if (queryIntent.type === 'topic') {
+                // Topic search: prioritize topic + listen score
+                score = topicScore * 0.4 + ftsScore * 0.2 + listenScoreNormalized * 0.25 + recencyBoost * 0.15;
+            } else if (queryIntent.type === 'name') {
+                // Name search: prioritize trigram
+                score = trigramScore * 0.5 + ftsScore * 0.2 + listenScoreNormalized * 0.2 + recencyBoost * 0.1;
+            } else {
+                // Mixed: balanced
+                score = topicScore * 0.25 + ftsScore * 0.25 + trigramScore * 0.2 + listenScoreNormalized * 0.2 + recencyBoost * 0.1;
+            }
+
+            // Determine primary match source for evidence
+            let matchType: 'topic' | 'fts' | 'trigram_name' | 'fallback' = 'fallback';
+            if (topicScore > 0.3) matchType = 'topic';
+            else if (trigramScore > 0.4) matchType = 'trigram_name';
+            else if (ftsScore > 0) matchType = 'fts';
+
+            return {
+                ...c,
+                score,
+                matchType,
+            };
+        });
+
+        // Sort by score descending
+        scoredCandidates.sort((a, b) => b.score - a.score);
+
+        // Apply pagination
+        const paginatedIds = scoredCandidates
+            .slice(offset, offset + limit)
+            .map(c => c.id);
+
+        // Fetch full podcast details for paginated results
+        const podcastDetails = paginatedIds.length > 0
+            ? await db
+                .select()
+                .from(podcasts)
+                .where(inArray(podcasts.id, paginatedIds))
+            : [];
+
+        // Map to enhanced podcasts with evidence
+        const enhancedPodcasts: EnhancedPodcast[] = paginatedIds.map(id => {
+            const scored = scoredCandidates.find(c => c.id === id)!;
+            const podcast = podcastDetails.find(p => p.id === id);
+
+            if (!podcast) {
+                throw new Error(`Podcast ${id} not found`);
+            }
+
+            return {
+                ...this.mapPodcast(podcast),
+                score: scored.score,
+                matchEvidence: {
+                    type: scored.matchType,
+                    matchedTopics: scored.topicMatches.length > 0 ? scored.topicMatches : undefined,
+                    ftsRank: scored.ftsRank > 0 ? scored.ftsRank : undefined,
+                    trigramSimilarity: scored.trigramSimilarity > 0 ? scored.trigramSimilarity : undefined,
+                    trigramField: scored.trigramField || undefined,
+                },
+            };
+        });
+
+        console.log(`  ✅ Returning ${enhancedPodcasts.length} results (total candidates: ${candidates.length})`);
+
+        return {
+            podcasts: enhancedPodcasts,
+            total: candidates.length,
+            page,
+            limit,
+            hasMore: offset + paginatedIds.length < candidates.length,
+            resolvedTopics,
+            queryIntent,
+            sourceBreakdown: {
+                local: candidates.length,
+                listenNotes: 0, // Will be updated by the hybrid wrapper
+            },
         };
     }
 

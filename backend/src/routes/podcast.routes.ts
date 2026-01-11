@@ -21,6 +21,33 @@ router.get(
     }
 );
 
+// GET /api/podcasts/search/v2
+// Enhanced search with topics, FTS, and trigram matching
+router.get(
+    '/search/v2',
+    optionalAuthMiddleware,
+    validateQuery(podcastSearchSchema),
+    async (req, res, next) => {
+        try {
+            const result = await PodcastService.searchEnhanced(req.query as any);
+            res.json({
+                success: true,
+                data: result,
+                meta: {
+                    queryIntent: result.queryIntent,
+                    resolvedTopics: result.resolvedTopics.map(t => ({
+                        slug: t.slug,
+                        displayName: t.displayName,
+                        matchedVia: t.matchedVia,
+                    })),
+                },
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
 // GET /api/podcasts/:id
 router.get(
     '/:id',

@@ -9,6 +9,8 @@ import {
     jsonb,
     uniqueIndex,
     index,
+    real,
+    primaryKey,
 } from 'drizzle-orm/pg-core';
 
 // =============================================================================
@@ -290,4 +292,78 @@ export const ingestionRuns = pgTable('ingestion_runs', {
 }, (table) => ({
     sourceIdx: index('ingestion_runs_source_idx').on(table.source),
     startedAtIdx: index('ingestion_runs_started_at_idx').on(table.startedAt),
+}));
+
+// =============================================================================
+// TOPICS (Canonical Topics Taxonomy)
+// =============================================================================
+
+export const topics = pgTable('topics', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    slug: varchar('slug', { length: 100 }).notNull().unique(),
+    displayName: varchar('display_name', { length: 200 }).notNull(),
+    parentId: uuid('parent_id').references((): any => topics.id, { onDelete: 'set null' }),
+    description: text('description'),
+    isGeneric: boolean('is_generic').notNull().default(false),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+    parentIdIdx: index('idx_topics_parent_id').on(table.parentId),
+}));
+
+// =============================================================================
+// TOPIC ALIASES (Synonyms)
+// =============================================================================
+
+export const topicAliases = pgTable('topic_aliases', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    topicId: uuid('topic_id').notNull().references(() => topics.id, { onDelete: 'cascade' }),
+    alias: varchar('alias', { length: 200 }).notNull().unique(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => ({
+    topicIdIdx: index('idx_topic_aliases_topic_id').on(table.topicId),
+}));
+
+// =============================================================================
+// PODCAST TOPICS (Junction with weight)
+// =============================================================================
+
+export const podcastTopics = pgTable('podcast_topics', {
+    podcastId: uuid('podcast_id').notNull().references(() => podcasts.id, { onDelete: 'cascade' }),
+    topicId: uuid('topic_id').notNull().references(() => topics.id, { onDelete: 'cascade' }),
+    weight: real('weight').notNull().default(1.0),
+    source: varchar('source', { length: 50 }).notNull().default('category_map'),
+    evidenceCount: integer('evidence_count').notNull().default(1),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+    pk: primaryKey({ columns: [table.podcastId, table.topicId] }),
+    topicIdIdx: index('idx_podcast_topics_topic_id').on(table.topicId),
+    weightIdx: index('idx_podcast_topics_weight').on(table.weight),
+}));
+
+// =============================================================================
+// EPISODE TOPICS (Junction with weight - for inference)
+// =============================================================================
+
+export const episodeTopics = pgTable('episode_topics', {
+    episodeId: uuid('episode_id').notNull().references(() => podcastEpisodes.id, { onDelete: 'cascade' }),
+    topicId: uuid('topic_id').notNull().references(() => topics.id, { onDelete: 'cascade' }),
+    weight: real('weight').notNull().default(1.0),
+    source: varchar('source', { length: 50 }).notNull().default('title_match'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => ({
+    pk: primaryKey({ columns: [table.episodeId, table.topicId] }),
+    topicIdIdx: index('idx_episode_topics_topic_id').on(table.topicId),
+}));
+
+// =============================================================================
+// GENRE TOPIC MAPPING (Listen Notes genre_id → topic mapping)
+// =============================================================================
+
+export const genreTopicMapping = pgTable('genre_topic_mapping', {
+    genreId: integer('genre_id').primaryKey(),
+    topicId: uuid('topic_id').notNull().references(() => topics.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => ({
+    topicIdIdx: index('idx_genre_topic_mapping_topic').on(table.topicId),
 }));
