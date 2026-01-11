@@ -172,3 +172,31 @@ echo -n "MqGbXtmNMXtwdqkjS6Be^DhS" | gcloud secrets versions add podcast-pitch-p
 ## License
 
 Proprietary - All rights reserved
+
+
+
+
+
+
+My Recommendation for MVP
+A focused enhancement that adds significant value with minimal complexity:
+
+sql
+-- 1. Add pg_trgm index for fuzzy host/title matching
+CREATE INDEX podcasts_title_trgm_idx ON podcasts USING gin (title gin_trgm_ops);
+CREATE INDEX podcasts_host_name_trgm_idx ON podcasts USING gin (host_name gin_trgm_ops);
+-- 2. Add proper FTS index on description (you have searchVector but not using it)
+CREATE INDEX podcasts_search_idx ON podcasts USING gin (to_tsvector('english', COALESCE(title, '') || ' ' || COALESCE(description, '')));
+Then update ranking to:
+
+ts
+.orderBy(
+    desc(podcasts.listenScore),
+    desc(podcasts.latestEpisodePubDate),  // Recency boost
+    desc(podcasts.audienceSizeEstimate)
+)
+Questions for You
+Trigram search - Do you want me to implement fuzzy matching so users can find "Tim Ferris" even if they type "Tim Faris"?
+Recency boost - How aggressive should recency weighting be? E.g., should podcasts with episodes in the last 30 days rank higher than those with higher listen scores but inactive for 6 months?
+"Why" evidence - Is this important for your pitch workflow? (e.g., "Matched: 3 episodes about AI in last month, host interviewed AI founders")
+Would you like me to create an implementation plan for the MVP search improvements, or is this analysis sufficient for now?
