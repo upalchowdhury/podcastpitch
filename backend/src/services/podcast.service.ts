@@ -258,7 +258,10 @@ export class PodcastService {
             );
         }
 
-        const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+        // Always filter to podcasts with email addresses
+        conditions.push(sql`${podcasts.contactEmail} IS NOT NULL`);
+
+        const whereClause = and(...conditions);
 
         // Get total count
         const [{ count }] = await db
@@ -266,15 +269,15 @@ export class PodcastService {
             .from(podcasts)
             .where(whereClause);
 
-        // Get paginated results, ordered by listen_score, then last_seen_at
+        // Get paginated results, ordered by latest episode date (active first), then listen_score
         const results = await db
             .select()
             .from(podcasts)
             .where(whereClause)
             .orderBy(
+                sql`${podcasts.latestEpisodePubDate} DESC NULLS LAST`,
                 desc(podcasts.listenScore),
-                desc(podcasts.lastSeenAt),
-                desc(podcasts.audienceSizeEstimate)
+                desc(podcasts.lastSeenAt)
             )
             .limit(limit)
             .offset(offset);
@@ -818,6 +821,10 @@ export class PodcastService {
             website: p.websiteUrl,
             audienceSizeEstimate: p.audienceSizeEstimate,
             imageUrl: p.imageUrl,
+            // Activity tracking fields
+            latestEpisodePubDate: p.latestEpisodePubDate,
+            totalEpisodes: p.totalEpisodes,
+            listenScore: p.listenScore,
             createdAt: p.createdAt,
             updatedAt: p.updatedAt,
         };
