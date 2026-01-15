@@ -24,6 +24,21 @@ export default function SendQueuePage() {
         fetchJobs();
     }, []);
 
+    // Auto-refresh when there are active jobs (pending or processing)
+    useEffect(() => {
+        const hasActiveJobs = jobs.some(
+            (j) => j.status === 'pending' || j.status === 'processing'
+        );
+
+        if (!hasActiveJobs) return;
+
+        const interval = setInterval(() => {
+            fetchJobs();
+        }, 5000); // Refresh every 5 seconds
+
+        return () => clearInterval(interval);
+    }, [jobs]);
+
     const fetchJobs = async () => {
         try {
             const data = await sendApi.getJobs();
